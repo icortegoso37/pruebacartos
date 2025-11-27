@@ -400,11 +400,13 @@
                 }
             });
             
-            const disponibleTotal = parseFloat(state.sueldo || 0) + totalIngresos + totalAjustes - totalGastosRecurrentes - totalGastosVariables;
+// Dinero disponible = suma de saldos reales de todas las cuentas
+            const disponibleTotal = state.cuentas.reduce((sum, c) => sum + c.saldo, 0);
             const gastoPorDiaRestante = diasRestantes > 0 ? (disponibleTotal - (ahorroDiarioNecesario * diasRestantes)) / diasRestantes : 0;
             
             const totalGastos = totalGastosRecurrentes + totalGastosVariables;
-            const ingresoTotal = parseFloat(state.sueldo || 0) + totalIngresos;
+// Ingreso total = solo ingresos registrados en el período
+            const ingresoTotal = totalIngresos;
             const porcentajeGastado = ingresoTotal > 0 ? (totalGastos / ingresoTotal) * 100 : 0;
             
             return {
