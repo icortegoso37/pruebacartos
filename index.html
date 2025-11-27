@@ -691,6 +691,27 @@
                 render();
             }
         }
+    function confirmarSueldo() {
+    const modal = document.getElementById('modal-sueldo');
+    const montoFinal = parseFloat(document.getElementById('input-sueldo').value);
+
+    if (!isNaN(montoFinal) && montoFinal > 0) {
+        state.ingresos.push({
+            descripcion: "Sueldo",
+            monto: montoFinal,
+            cuentaId: state.cuentas[0]?.id || 1,
+            fecha: modal.dataset.fechaIngreso,
+            id: Date.now()
+        });
+
+        state.ultimaActualizacionSueldo = modal.dataset.fechaCobro;
+        recalcularSaldosCuentas();
+        guardarEstado();
+    }
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
 
         function eliminarIngreso(id) {
             const ingreso = state.ingresos.find(i => i.id === id);
@@ -869,7 +890,25 @@
         function render() {
             // Procesar gastos recurrentes si es necesario
             procesarGastosRecurrentes();
-            
+            // Función para añadir el sueldo como ingreso automático en la fecha de cobro, con confirmación
+            function procesarSueldoMensual() {
+    const { inicioPeriodo } = obtenerPeriodoPagoActual();
+    const inicioPeriodoStr = inicioPeriodo.toISOString().split('T')[0];
+
+    // Evitar duplicar si ya se añadió este mes
+    if (state.ultimaActualizacionSueldo === inicioPeriodoStr) return;
+
+    // Mostrar modal para confirmar sueldo
+    const modal = document.getElementById('modal-sueldo');
+    const input = document.getElementById('input-sueldo');
+    input.value = state.sueldo || ''; // valor sugerido
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    modal.dataset.fechaCobro = inicioPeriodoStr;
+    modal.dataset.fechaIngreso = inicioPeriodo.toISOString();
+}
+
             // Recalcular saldos de cuentas
             recalcularSaldosCuentas();
             
