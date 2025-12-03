@@ -1,0 +1,3462 @@
+<!DOCTYPE html>
+<html lang="gl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f0f23">
+    <meta name="description" content="Cartiños - Xestor de gastos intelixente en galego">
+    
+    <title>Cartiños - Xestor de Gastos</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNhcnRpw7HDtXMiLAogICJzaG9ydF9uYW1lIjogIkNhcnRpw7HDtXMiLAogICJkZXNjcmlwdGlvbiI6ICJYZXN0b3IgZGUgZ2FzdG9zIGludGVsaXhlbnRlIiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZjBmMjMiLAogICJ0aGVtZV9jb2xvciI6ICIjMGYwZjIzIiwKICAib3JpZW50YXRpb24iOiAicG9ydHJhaXQiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWwsJTNDc3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnJTNFJTNDdGV4dCB5PScuOWVtJyBmb250LXNpemU9JzkwJyUzRSVGMCU5RiU5MiVCMCUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJyUzRSUzQ3RleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCclM0UlRjAlOUYlOTIlQjAlM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
+    
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💰%3C/text%3E%3C/svg%3E">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --safe-area-inset-top: env(safe-area-inset-top);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom);
+        }
+        
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a0a2e 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding-top: max(60px, var(--safe-area-inset-top));
+            padding-bottom: max(70px, calc(70px + var(--safe-area-inset-bottom)));
+            overscroll-behavior: none;
+        }
+
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: linear-gradient(135deg, rgba(15, 15, 35, 0.98) 0%, rgba(26, 10, 46, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(131, 56, 236, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            padding-top: var(--safe-area-inset-top);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: linear-gradient(135deg, rgba(15, 15, 35, 0.98) 0%, rgba(26, 10, 46, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(131, 56, 236, 0.2);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+            padding-bottom: var(--safe-area-inset-bottom);
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 4px;
+            color: rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .nav-item.active {
+            color: #8338EC;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(90deg, #FF006E, #8338EC);
+            border-radius: 0 0 3px 3px;
+        }
+
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .view-container {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.4s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-neon {
+            background: rgba(15, 15, 35, 0.8);
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+            border-radius: 20px;
+        }
+
+        .card-neon::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #FF006E, #8338EC, #3A86FF, #FFBE0B);
+            border-radius: inherit;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .btn-neon {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .btn-neon:active {
+            transform: scale(0.95);
+        }
+
+        .btn-neon:hover {
+            box-shadow: 0 0 20px rgba(131, 56, 236, 0.6);
+        }
+
+        .input-neon {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(131, 56, 236, 0.5);
+            transition: all 0.3s ease;
+            font-size: 16px; /* Previene zoom iOS */
+        }
+
+        .input-neon:focus {
+            outline: none;
+            border-color: #8338EC;
+            box-shadow: 0 0 15px rgba(131, 56, 236, 0.3);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(131, 56, 236, 0.2), rgba(255, 0, 110, 0.1));
+            backdrop-filter: blur(10px);
+        }
+
+        .swipe-item {
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .swipe-delete {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background: linear-gradient(90deg, transparent, #ef4444);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .pulse-animation {
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(131, 56, 236, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(255, 0, 110, 0.7);
+            }
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(15, 15, 35, 0.98) 0%, rgba(26, 10, 46, 0.98) 100%);
+            border: 2px solid rgba(131, 56, 236, 0.5);
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            z-index: 9999;
+            box-shadow: 0 0 50px rgba(131, 56, 236, 0.4);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border-radius: 12px;
+            background: rgba(131, 56, 236, 0.2);
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        /* Pull to refresh */
+        .ptr-element {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8338EC;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .ptr-element.visible {
+            transform: translateY(0);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(131, 56, 236, 0.2);
+            border-top: 3px solid #8338EC;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Notificación toast */
+        .toast {
+            position: fixed;
+            bottom: calc(80px + var(--safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, #8338EC, #FF006E);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(131, 56, 236, 0.5);
+            z-index: 10000;
+            animation: toastSlide 0.4s ease forwards;
+            max-width: 90%;
+        }
+
+        @keyframes toastSlide {
+            to {
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Búsqueda */
+        .search-container {
+            position: relative;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 35, 0.98);
+            border: 2px solid rgba(131, 56, 236, 0.5);
+            border-radius: 12px;
+            margin-top: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        /* Widget resumen */
+        .widget-summary {
+            position: fixed;
+            top: calc(60px + var(--safe-area-inset-top));
+            right: 16px;
+            background: linear-gradient(135deg, rgba(131, 56, 236, 0.9), rgba(255, 0, 110, 0.9));
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            min-width: 120px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-black" style="background: linear-gradient(45deg, #FF006E, #8338EC, #3A86FF, #FFBE0B); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    💰 Cartiños
+                </h1>
+                <div class="flex gap-2">
+                    <button onclick="mostrarBusqueda()" class="btn-neon p-2 rounded-xl bg-purple-600/30">
+                        🔍
+                    </button>
+                    <button onclick="mostrarWidget()" class="btn-neon p-2 rounded-xl bg-purple-600/30">
+                        📊
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget Resumen (oculto por defecto) -->
+    <div id="widget-summary" class="widget-summary" style="display: none;">
+        <div class="text-xs text-white/70 mb-1">Dispoñible hoxe</div>
+        <div id="widget-amount" class="text-xl font-bold text-white">0€</div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app" class="min-h-screen p-4 pb-8"></div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="flex items-center justify-around">
+            <div class="nav-item active" onclick="cambiarVista('cartinos')" data-view="cartinos">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">Cartiños</div>
+            </div>
+            <div class="nav-item" onclick="cambiarVista('dinheiros')" data-view="dinheiros">
+                <div class="nav-icon">💰</div>
+                <div class="nav-label">Diñeiros</div>
+            </div>
+            <div class="nav-item" onclick="cambiarVista('stats')" data-view="stats">
+                <div class="nav-icon">📊</div>
+                <div class="nav-label">Stats</div>
+            </div>
+            <div class="nav-item" onclick="cambiarVista('obxetivos')" data-view="obxetivos">
+                <div class="nav-icon">🎯</div>
+                <div class="nav-label">Obxetivos</div>
+            </div>
+            <div class="nav-item" onclick="cambiarVista('categorias')" data-view="categorias">
+                <div class="nav-icon">📁</div>
+                <div class="nav-label">Categorías</div>
+            </div>
+            <div class="nav-item" onclick="cambiarVista('axustes')" data-view="axustes">
+                <div class="nav-icon">⚙️</div>
+                <div class="nav-label">Axustes</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // ESTADO GLOBAL
+        // ============================================
+        let state = {
+            sueldo: localStorage.getItem('sueldo') || '',
+            diaCobro: localStorage.getItem('diaCobro') || '',
+            gastosRecurrentes: JSON.parse(localStorage.getItem('gastosRecurrentes') || '[]'),
+            gastos: JSON.parse(localStorage.getItem('gastos') || '[]'),
+            ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
+            ajustes: JSON.parse(localStorage.getItem('ajustes') || '[]'),
+            objetivosAhorro: JSON.parse(localStorage.getItem('objetivosAhorro') || '[]'),
+            categorias: JSON.parse(localStorage.getItem('categorias') || '["Alimentación", "Transporte", "Entretenimiento", "Salud", "Hogar", "Ropa", "Outros"]'),
+            cuentas: JSON.parse(localStorage.getItem('cuentas') || '[{"id": 1, "nombre": "Conta Principal", "tipo": "banco", "saldoInicial": 0, "saldo": 0}]'),
+            alertasConfig: JSON.parse(localStorage.getItem('alertasConfig') || '{"diasParaCobro": 3, "porcentajeGastoMitadMes": 50, "alertaObjetivosEnRiesgo": true, "diasSinGastos": 7}'),
+            vista: 'cartinos',
+            alertasMostradas: [],
+            ultimaActualizacionRecurrentes: localStorage.getItem('ultimaActualizacionRecurrentes') || '',
+            editando: null,
+            ultimoMesConfirmado: localStorage.getItem('ultimoMesConfirmado') || '',
+            sueldoConfirmadoEsteMes: localStorage.getItem('sueldoConfirmadoEsteMes') === 'true',
+            modoAhorroExtremo: JSON.parse(localStorage.getItem('modoAhorroExtremo') || '{"activo": false, "categoriasEsenciales": ["Alimentación", "Salud", "Transporte", "Hogar"], "limiteGastoDiario": 0}'),
+            recordatorios: JSON.parse(localStorage.getItem('recordatorios') || '[]'),
+            dashboardConfig: JSON.parse(localStorage.getItem('dashboardConfig') || '{"widgets": ["disponibleHoy", "gastosRecurrentes", "objetivos", "ultimosGastos"]}'),
+            fechaSimulada: localStorage.getItem('fechaSimulada') || null,
+            notificacionesActivadas: localStorage.getItem('notificacionesActivadas') === 'true',
+            backupConfig: JSON.parse(localStorage.getItem('backupConfig') || '{"activo": false, "frecuencia": "semanal", "ultimoBackup": null}'),
+            widgetVisible: localStorage.getItem('widgetVisible') === 'true'
+        };
+
+        let saveTimeout = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let swipeElement = null;
+
+        // Iconos por categoría
+        const iconosCategorias = {
+            'Alimentación': '🍽️',
+            'Transporte': '🚗',
+            'Entretenimiento': '🎮',
+            'Salud': '💊',
+            'Hogar': '🏠',
+            'Ropa': '👕',
+            'Outros': '📦'
+        };
+
+        // Palabras clave para detección inteligente
+        const palabrasClave = {
+            'Alimentación': ['supermercado', 'mercado', 'mercadona', 'carrefour', 'lidl', 'aldi', 'dia', 'comida', 'cena', 'desayuno', 'almuerzo', 'restaurante', 'bar', 'cafetería', 'café', 'pizza', 'hamburgues', 'mcdonalds', 'burger', 'kfc', 'telepizza'],
+            'Transporte': ['gasolina', 'diesel', 'combustible', 'bus', 'metro', 'taxi', 'uber', 'cabify', 'parking', 'aparcamiento', 'peaxe', 'tren', 'renfe', 'avión', 'vueling', 'ryanair'],
+            'Entretenimiento': ['cine', 'teatro', 'concierto', 'netflix', 'spotify', 'hbo', 'disney', 'prime', 'youtube', 'xogo', 'videoxogo', 'steam', 'playstation', 'xbox', 'ocio'],
+            'Salud': ['farmacia', 'médico', 'doutor', 'hospital', 'clínica', 'medicamento', 'medicina', 'seguro', 'ximnasio', 'deporte', 'fitness'],
+            'Hogar': ['aluguer', 'hipoteca', 'luz', 'auga', 'gas', 'internet', 'wifi', 'móbil', 'teléfono', 'ikea', 'leroy', 'bricolaxe', 'ferretería', 'moble'],
+            'Ropa': ['zara', 'hm', 'primark', 'mango', 'roupa', 'zapatillas', 'zapatos', 'calzado', 'vestido', 'pantalón', 'camisa', 'abrigo']
+        };
+
+        // Migración de datos
+        state.cuentas.forEach(cuenta => {
+            if (cuenta.saldoInicial === undefined) {
+                cuenta.saldoInicial = cuenta.saldo || 0;
+            }
+        });
+
+        // Inicialización
+        setTimeout(() => {
+            recalcularSaldosCuentas();
+            verificarConfirmacionSueldo();
+            verificarAlertas();
+            verificarRecordatorios();
+            if (state.backupConfig.activo) {
+                verificarBackupAutomatico();
+            }
+            registrarServiceWorker();
+        }, 0);
+
+        // ============================================
+        // SERVICE WORKER (PWA)
+        // ============================================
+        function registrarServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    self.addEventListener('install', (event) => {
+                        event.waitUntil(
+                            caches.open('cartinos-v1').then((cache) => {
+                                return cache.addAll([
+                                    '/',
+                                    '/index.html'
+                                ]);
+                            })
+                        );
+                    });
+
+                    self.addEventListener('fetch', (event) => {
+                        event.respondWith(
+                            caches.match(event.request).then((response) => {
+                                return response || fetch(event.request);
+                            })
+                        );
+                    });
+
+                    self.addEventListener('push', (event) => {
+                        const data = event.data.json();
+                        self.registration.showNotification(data.title, {
+                            body: data.body,
+                            icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E💰%3C/text%3E%3C/svg%3E'
+                        });
+                    });
+                `;
+                
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                
+                navigator.serviceWorker.register(swUrl).then(() => {
+                    console.log('✅ Service Worker rexistrado');
+                }).catch((error) => {
+                    console.log('❌ Erro ao rexistrar Service Worker:', error);
+                });
+            }
+        }
+
+        // ============================================
+        // FUNCIÓNS DE PERSISTENCIA
+        // ============================================
+        function guardarEstadoDebounce() {
+            if (saveTimeout) clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                guardarEstado();
+            }, 1000);
+        }
+
+        function guardarEstado() {
+            try {
+                localStorage.setItem('sueldo', state.sueldo);
+                localStorage.setItem('diaCobro', state.diaCobro);
+                localStorage.setItem('gastosRecurrentes', JSON.stringify(state.gastosRecurrentes));
+                localStorage.setItem('gastos', JSON.stringify(state.gastos));
+                localStorage.setItem('ingresos', JSON.stringify(state.ingresos));
+                localStorage.setItem('ajustes', JSON.stringify(state.ajustes));
+                localStorage.setItem('objetivosAhorro', JSON.stringify(state.objetivosAhorro));
+                localStorage.setItem('categorias', JSON.stringify(state.categorias));
+                localStorage.setItem('cuentas', JSON.stringify(state.cuentas));
+                localStorage.setItem('alertasConfig', JSON.stringify(state.alertasConfig));
+                localStorage.setItem('ultimaActualizacionRecurrentes', state.ultimaActualizacionRecurrentes);
+                localStorage.setItem('ultimoMesConfirmado', state.ultimoMesConfirmado);
+                localStorage.setItem('sueldoConfirmadoEsteMes', state.sueldoConfirmadoEsteMes);
+                localStorage.setItem('modoAhorroExtremo', JSON.stringify(state.modoAhorroExtremo));
+                localStorage.setItem('recordatorios', JSON.stringify(state.recordatorios));
+                localStorage.setItem('dashboardConfig', JSON.stringify(state.dashboardConfig));
+                localStorage.setItem('fechaSimulada', state.fechaSimulada);
+                localStorage.setItem('notificacionesActivadas', state.notificacionesActivadas);
+                localStorage.setItem('backupConfig', JSON.stringify(state.backupConfig));
+                localStorage.setItem('widgetVisible', state.widgetVisible);
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    mostrarToast('⚠️ Almacenamento cheo! Exporta e limpa datos antigos.', 'warning');
+                }
+            }
+        }
+        // ============================================
+        // FUNCIÓNS DE DATA E PERÍODO
+        // ============================================
+        function obtenerFechaActual() {
+            if (state.fechaSimulada) {
+                return new Date(state.fechaSimulada);
+            }
+            return new Date();
+        }
+
+        function obtenerPeriodoPagoActual() {
+            const hoy = obtenerFechaActual();
+            const diaActual = hoy.getDate();
+            const mesActual = hoy.getMonth();
+            const añoActual = hoy.getFullYear();
+            const diaCobro = parseInt(state.diaCobro || 1);
+            
+            let inicioPeriodo, finPeriodo;
+            
+            if (diaActual >= diaCobro) {
+                inicioPeriodo = new Date(añoActual, mesActual, diaCobro);
+                finPeriodo = new Date(añoActual, mesActual + 1, diaCobro - 1);
+            } else {
+                inicioPeriodo = new Date(añoActual, mesActual - 1, diaCobro);
+                finPeriodo = new Date(añoActual, mesActual, diaCobro - 1);
+            }
+            
+            return { inicioPeriodo, finPeriodo };
+        }
+
+        function obtenerIdentificadorPeriodo() {
+            const { inicioPeriodo } = obtenerPeriodoPagoActual();
+            return `${inicioPeriodo.getFullYear()}-${inicioPeriodo.getMonth()}-${inicioPeriodo.getDate()}`;
+        }
+
+        function formatearFecha(fecha) {
+            const f = new Date(fecha);
+            return f.toLocaleDateString('gl-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function formatearFechaHora(fecha) {
+            const f = new Date(fecha);
+            return f.toLocaleDateString('gl-ES', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // ============================================
+        // CONFIRMACIÓN DE SUELDO
+        // ============================================
+        function verificarConfirmacionSueldo() {
+            if (!state.sueldo || !state.diaCobro) {
+                return;
+            }
+
+            const periodoActualId = obtenerIdentificadorPeriodo();
+            
+            if (state.ultimoMesConfirmado !== periodoActualId) {
+                state.sueldoConfirmadoEsteMes = false;
+                state.ultimoMesConfirmado = periodoActualId;
+                guardarEstado();
+            }
+
+            if (!state.sueldoConfirmadoEsteMes) {
+                mostrarModalConfirmacionSueldo();
+            }
+        }
+
+        function mostrarModalConfirmacionSueldo() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.onclick = (e) => {
+                if (e.target === modal) cerrarModalConfirmacion();
+            };
+            
+            modal.innerHTML = `
+                <div class="modal-content p-6">
+                    <h2 class="text-3xl font-bold mb-4 text-center" style="background: linear-gradient(45deg, #FF006E, #8338EC, #3A86FF, #FFBE0B); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        💰 Confirmar Sueldo
+                    </h2>
+                    <p class="text-gray-300 text-center mb-6">
+                        Novo período de cobro! Confirmas o teu soldo?
+                    </p>
+                    
+                    <div class="bg-black/30 rounded-xl p-6 mb-6 text-center">
+                        <p class="text-gray-400 text-sm mb-2">Soldo configurado:</p>
+                        <p class="text-4xl font-bold text-white">${parseFloat(state.sueldo).toFixed(2)}€</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button 
+                            onclick="confirmarSueldo(${state.sueldo})"
+                            class="btn-neon w-full bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 rounded-xl font-bold text-lg"
+                        >
+                            ✅ Si, confirmar ${parseFloat(state.sueldo).toFixed(2)}€
+                        </button>
+                        
+                        <button 
+                            onclick="editarYConfirmarSueldo()"
+                            class="btn-neon w-full bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-4 rounded-xl font-bold"
+                        >
+                            ✏️ Editar monto
+                        </button>
+                        
+                        <button 
+                            onclick="cerrarModalConfirmacion()"
+                            class="btn-neon w-full bg-gradient-to-r from-gray-600 to-gray-700 px-6 py-4 rounded-xl font-bold"
+                        >
+                            ⏭️ Recordar máis tarde
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-gray-500 text-center mt-4">
+                        Ao confirmar, rexistrarase como ingreso na túa conta principal
+                    </p>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function confirmarSueldo(monto) {
+            const { inicioPeriodo } = obtenerPeriodoPagoActual();
+            const cuentaPrincipal = state.cuentas.find(c => c.id === 1) || state.cuentas[0];
+            
+            const nuevoIngreso = {
+                id: Date.now(),
+                descripcion: '💰 Soldo do período',
+                monto: parseFloat(monto),
+                fecha: inicioPeriodo.toISOString().split('T')[0],
+                cuentaId: cuentaPrincipal.id,
+                confirmado: true
+            };
+
+            state.ingresos.push(nuevoIngreso);
+            state.sueldoConfirmadoEsteMes = true;
+            state.ultimoMesConfirmado = obtenerIdentificadorPeriodo();
+            
+            guardarEstado();
+            recalcularSaldosCuentas();
+            cerrarModalConfirmacion();
+            render();
+
+            mostrarToast('✅ Soldo confirmado e rexistrado', 'success');
+            
+            // Enviar notificación si está activada
+            if (state.notificacionesActivadas) {
+                enviarNotificacion('Soldo confirmado', `${parseFloat(monto).toFixed(2)}€ engadido á túa conta`);
+            }
+        }
+
+        function editarYConfirmarSueldo() {
+            cerrarModalConfirmacion();
+            
+            const nuevoMonto = prompt('Ingresa o monto real do teu soldo:', state.sueldo);
+            if (nuevoMonto && !isNaN(nuevoMonto) && parseFloat(nuevoMonto) > 0) {
+                state.sueldo = nuevoMonto;
+                guardarEstado();
+                confirmarSueldo(nuevoMonto);
+            } else if (nuevoMonto !== null) {
+                mostrarToast('❌ Monto inválido', 'error');
+                setTimeout(() => verificarConfirmacionSueldo(), 500);
+            }
+        }
+
+        function cerrarModalConfirmacion() {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => modal.remove(), 300);
+            }
+        }
+
+        // ============================================
+        // MODO AHORRO EXTREMO
+        // ============================================
+        function validarGastoModoAhorroExtremo(categoria, monto) {
+            if (!state.modoAhorroExtremo.activo) {
+                return { permitido: true };
+            }
+
+            const esEsencial = state.modoAhorroExtremo.categoriasEsenciales.includes(categoria);
+            const stats = calcularEstadisticas();
+            const seHaPasado = stats.gastoPorDiaRestante <= 0;
+
+            if (esEsencial) {
+                return { permitido: true, mensaje: 'Categoría esencial permitida' };
+            }
+
+            if (seHaPasado) {
+                return {
+                    permitido: false,
+                    mensaje: '🚫 MODO AHORRO EXTREMO: Non podes engadir gastos en categorías non esenciais. Xa superaches o teu presuposto diario.',
+                    tipo: 'bloqueado'
+                };
+            }
+
+            if (state.modoAhorroExtremo.limiteGastoDiario > 0) {
+                const hoy = obtenerFechaActual();
+                const gastosHoy = state.gastos.filter(g => {
+                    if (!g || !g.fecha) return false;
+                    const fechaGasto = new Date(g.fecha);
+                    return fechaGasto.toDateString() === hoy.toDateString();
+                });
+                const totalGastadoHoy = gastosHoy.reduce((sum, g) => sum + parseFloat(g.monto || 0), 0);
+
+                if (totalGastadoHoy + parseFloat(monto) > state.modoAhorroExtremo.limiteGastoDiario) {
+                    return {
+                        permitido: false,
+                        mensaje: `🚫 MODO AHORRO EXTREMO: Superarías o teu límite diario de ${state.modoAhorroExtremo.limiteGastoDiario.toFixed(2)}€. Hoxe gastaches ${totalGastadoHoy.toFixed(2)}€.`,
+                        tipo: 'bloqueado'
+                    };
+                }
+            }
+
+            return {
+                permitido: true,
+                mensaje: `⚠️ MODO AHORRO EXTREMO: Estás a engadir un gasto non esencial. Quedan ${stats.gastoPorDiaRestante.toFixed(2)}€ para hoxe.`,
+                tipo: 'advertencia'
+            };
+        }
+
+        function toggleModoAhorroExtremo() {
+            state.modoAhorroExtremo.activo = !state.modoAhorroExtremo.activo;
+            guardarEstado();
+            render();
+            
+            if (state.modoAhorroExtremo.activo) {
+                mostrarToast('🔥 MODO AHORRO EXTREMO ACTIVADO', 'warning');
+                if (state.notificacionesActivadas) {
+                    enviarNotificacion('Modo Ahorro Extremo', 'Activado: só gastos esenciais');
+                }
+            } else {
+                mostrarToast('✅ Modo ahorro extremo desactivado', 'success');
+            }
+        }
+
+        function agregarCategoriaEsencial(categoria) {
+            if (!state.modoAhorroExtremo.categoriasEsenciales.includes(categoria)) {
+                state.modoAhorroExtremo.categoriasEsenciales.push(categoria);
+                guardarEstado();
+                render();
+            }
+        }
+
+        function eliminarCategoriaEsencial(categoria) {
+            state.modoAhorroExtremo.categoriasEsenciales = state.modoAhorroExtremo.categoriasEsenciales.filter(c => c !== categoria);
+            guardarEstado();
+            render();
+        }
+
+        // ============================================
+        // PARSER INTELIGENTE
+        // ============================================
+        function parsearTextoInteligente(texto) {
+            if (!texto) return null;
+            
+            texto = texto.toLowerCase().trim();
+            
+            const regexMonto = /(\d+(?:[.,]\d+)?)/g;
+            const montos = texto.match(regexMonto);
+            let monto = null;
+            
+            if (montos && montos.length > 0) {
+                monto = parseFloat(montos[montos.length - 1].replace(',', '.'));
+            }
+            
+            let categoriaDetectada = 'Outros';
+            for (const [categoria, palabras] of Object.entries(palabrasClave)) {
+                for (const palabra of palabras) {
+                    if (texto.includes(palabra)) {
+                        categoriaDetectada = categoria;
+                        break;
+                    }
+                }
+                if (categoriaDetectada !== 'Outros') break;
+            }
+            
+            let descripcion = texto;
+            if (monto && montos) {
+                const ultimoMonto = montos[montos.length - 1];
+                const index = descripcion.lastIndexOf(ultimoMonto);
+                if (index !== -1) {
+                    descripcion = descripcion.substring(0, index) + descripcion.substring(index + ultimoMonto.length);
+                }
+            }
+            descripcion = descripcion.trim();
+            
+            return {
+                descripcion: descripcion || 'Sen descrición',
+                monto: monto,
+                categoria: categoriaDetectada
+            };
+        }
+
+        // ============================================
+        // FUNCIÓNS AUXILIARES
+        // ============================================
+        function obtenerColorCategoria(categoria) {
+            const coloresPredefinidos = {
+                'Alimentación': '#FF006E',
+                'Transporte': '#8338EC',
+                'Entretenimiento': '#FFBE0B',
+                'Salud': '#FB5607',
+                'Hogar': '#3A86FF',
+                'Ropa': '#FF006E',
+                'Outros': '#00F5FF'
+            };
+            
+            if (coloresPredefinidos[categoria]) return coloresPredefinidos[categoria];
+            
+            let hash = 0;
+            for (let i = 0; i < categoria.length; i++) {
+                hash = categoria.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const colores = ['#FF006E', '#8338EC', '#FFBE0B', '#FB5607', '#3A86FF', '#00F5FF', '#10b981', '#f59e0b'];
+            return colores[Math.abs(hash) % colores.length];
+        }
+
+        function obtenerIconoCategoria(categoria) {
+            return iconosCategorias[categoria] || '📦';
+        }
+
+        // ============================================
+        // CÁLCULO DE SALDOS
+        // ============================================
+        function calcularSaldoCuenta(cuentaId) {
+            const cuenta = state.cuentas.find(c => c.id === cuentaId);
+            if (!cuenta) return 0;
+            
+            let saldo = parseFloat(cuenta.saldoInicial || 0);
+            
+            state.ingresos.forEach(i => {
+                if (i.cuentaId === cuentaId) {
+                    saldo += parseFloat(i.monto);
+                }
+            });
+            
+            state.gastos.forEach(g => {
+                if (g.cuentaId === cuentaId) {
+                    saldo -= parseFloat(g.monto);
+                }
+            });
+            
+            state.ajustes.forEach(a => {
+                if (a.cuentaId === cuentaId) {
+                    const monto = parseFloat(a.monto);
+                    saldo += (a.tipo === 'positivo' ? monto : -monto);
+                }
+            });
+            
+            return saldo;
+        }
+
+        function recalcularSaldosCuentas() {
+            state.cuentas.forEach(cuenta => {
+                cuenta.saldo = calcularSaldoCuenta(cuenta.id);
+            });
+            actualizarWidget();
+        }
+
+        function procesarGastosRecurrentes() {
+            const { inicioPeriodo } = obtenerPeriodoPagoActual();
+            const inicioPeriodoStr = inicioPeriodo.toISOString().split('T')[0];
+            
+            if (state.ultimaActualizacionRecurrentes === inicioPeriodoStr) {
+                return;
+            }
+            
+            state.gastosRecurrentes.forEach(gr => {
+                state.gastos.push({
+                    descripcion: `${gr.nombre} (Recorrente)`,
+                    monto: gr.monto,
+                    categoria: gr.categoria,
+                    cuentaId: gr.cuentaId || state.cuentas[0]?.id || 1,
+                    fecha: inicioPeriodo.toISOString(),
+                    id: Date.now() + Math.random(),
+                    esRecurrente: true
+                });
+            });
+            
+            state.ultimaActualizacionRecurrentes = inicioPeriodoStr;
+            recalcularSaldosCuentas();
+            guardarEstado();
+        }
+        // ============================================
+        // ESTADÍSTICAS
+        // ============================================
+        function calcularEstadisticas() {
+            const hoy = obtenerFechaActual();
+            const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+            
+            const diasRestantes = Math.max(0, Math.ceil((finPeriodo - hoy) / (1000 * 60 * 60 * 24)) + 1);
+            const diasTotalesPeriodo = Math.ceil((finPeriodo - inicioPeriodo) / (1000 * 60 * 60 * 24)) + 1;
+            const diasTranscurridos = diasTotalesPeriodo - diasRestantes;
+            
+            const totalGastosRecurrentes = state.gastosRecurrentes.reduce((sum, gasto) => sum + parseFloat(gasto.monto || 0), 0);
+            
+            const gastosDelPeriodo = state.gastos.filter(gasto => {
+                if (!gasto || !gasto.fecha) return false;
+                const fechaGasto = new Date(gasto.fecha);
+                return fechaGasto >= inicioPeriodo && fechaGasto <= finPeriodo;
+            });
+            
+            const totalGastosVariables = gastosDelPeriodo.reduce((sum, gasto) => sum + parseFloat(gasto.monto || 0), 0);
+            
+            const ingresosDelPeriodo = state.ingresos.filter(ingreso => {
+                if (!ingreso || !ingreso.fecha) return false;
+                const fechaIngreso = new Date(ingreso.fecha);
+                return fechaIngreso >= inicioPeriodo && fechaIngreso <= finPeriodo;
+            });
+            const totalIngresos = ingresosDelPeriodo.reduce((sum, ingreso) => sum + parseFloat(ingreso.monto || 0), 0);
+            
+            const ajustesDelPeriodo = state.ajustes.filter(ajuste => {
+                if (!ajuste || !ajuste.fecha) return false;
+                const fechaAjuste = new Date(ajuste.fecha);
+                return fechaAjuste >= inicioPeriodo && fechaAjuste <= finPeriodo;
+            });
+            const totalAjustes = ajustesDelPeriodo.reduce((sum, ajuste) => {
+                const monto = parseFloat(ajuste.monto || 0);
+                return sum + (ajuste.tipo === 'positivo' ? monto : -monto);
+            }, 0);
+            
+            let ahorroDiarioNecesario = 0;
+            state.objetivosAhorro.forEach(objetivo => {
+                if (objetivo.activo !== false) {
+                    const fechaLimite = new Date(objetivo.fechaLimite);
+                    const diasParaObjetivo = Math.ceil((fechaLimite - hoy) / (1000 * 60 * 60 * 24));
+                    const montoRestante = parseFloat(objetivo.metaMonto) - parseFloat(objetivo.montoAhorrado || 0);
+                    
+                    if (diasParaObjetivo > 0 && montoRestante > 0) {
+                        ahorroDiarioNecesario += montoRestante / diasParaObjetivo;
+                    }
+                }
+            });
+            
+            const disponibleTotal = parseFloat(state.sueldo || 0) + totalIngresos + totalAjustes - totalGastosRecurrentes - totalGastosVariables;
+            const gastoPorDiaRestante = diasRestantes > 0 ? (disponibleTotal - (ahorroDiarioNecesario * diasRestantes)) / diasRestantes : 0;
+            
+            const totalGastos = totalGastosRecurrentes + totalGastosVariables;
+            const ingresoTotal = parseFloat(state.sueldo || 0) + totalIngresos;
+            const porcentajeGastado = ingresoTotal > 0 ? (totalGastos / ingresoTotal) * 100 : 0;
+            
+            // Gastos por día para gráfico de evolución
+            const gastosPorDia = {};
+            gastosDelPeriodo.forEach(g => {
+                const fecha = new Date(g.fecha).toISOString().split('T')[0];
+                gastosPorDia[fecha] = (gastosPorDia[fecha] || 0) + parseFloat(g.monto);
+            });
+            
+            return {
+                diasRestantes,
+                diasTotalesPeriodo,
+                diasTranscurridos,
+                totalGastosRecurrentes,
+                totalGastosVariables,
+                totalIngresos,
+                totalAjustes,
+                disponibleTotal,
+                gastoPorDiaRestante: Math.max(0, gastoPorDiaRestante),
+                ahorroDiarioNecesario,
+                totalGastos,
+                ingresoTotal,
+                porcentajeGastado,
+                inicioPeriodo,
+                finPeriodo,
+                gastosPorDia
+            };
+        }
+
+        function calcularProyecciones() {
+            const stats = calcularEstadisticas();
+            
+            const ahorroMensualActual = stats.disponibleTotal;
+            const proyeccion3Meses = ahorroMensualActual * 3;
+            
+            const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+            const gastosDelPeriodo = state.gastos.filter(g => {
+                const fecha = new Date(g.fecha);
+                return fecha >= inicioPeriodo && fecha <= finPeriodo;
+            });
+            
+            const gastosPorCategoria = {};
+            gastosDelPeriodo.forEach(g => {
+                const cat = g.categoria || 'Outros';
+                gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + parseFloat(g.monto);
+            });
+            
+            let categoríaMayorGasto = null;
+            let mayorGasto = 0;
+            Object.entries(gastosPorCategoria).forEach(([cat, monto]) => {
+                if (monto > mayorGasto) {
+                    mayorGasto = monto;
+                    categoríaMayorGasto = cat;
+                }
+            });
+            
+            let recomendacion = null;
+            if (categoríaMayorGasto && mayorGasto > 0) {
+                const ahorroPotencial = mayorGasto * 0.1;
+                const diasParaObjetivo = state.objetivosAhorro
+                    .filter(o => o.activo !== false)
+                    .map(o => {
+                        const fechaLimite = new Date(o.fechaLimite);
+                        const hoy = obtenerFechaActual();
+                        const montoRestante = parseFloat(o.metaMonto) - parseFloat(o.montoAhorrado || 0);
+                        const diasActuales = Math.ceil((fechaLimite - hoy) / (1000 * 60 * 60 * 24));
+                        if (montoRestante > 0 && diasActuales > 0) {
+                            const diasMejor = Math.floor(montoRestante / (stats.disponibleTotal + ahorroPotencial) * 30);
+                            return { nombre: o.nombre, diasActuales, diasMejor };
+                        }
+                        return null;
+                    })
+                    .filter(o => o !== null)[0];
+                
+                recomendacion = {
+                    categoria: categoríaMayorGasto,
+                    ahorroPotencial: ahorroPotencial,
+                    objetivo: diasParaObjetivo
+                };
+            }
+            
+            return {
+                proyeccion3Meses,
+                ahorroMensualActual,
+                recomendacion
+            };
+        }
+
+        function compararPeriodos() {
+            const { inicioPeriodo: inicioActual, finPeriodo: finActual } = obtenerPeriodoPagoActual();
+            
+            // Período anterior
+            const diaCobro = parseInt(state.diaCobro || 1);
+            const inicioAnterior = new Date(inicioActual);
+            inicioAnterior.setMonth(inicioAnterior.getMonth() - 1);
+            const finAnterior = new Date(finActual);
+            finAnterior.setMonth(finAnterior.getMonth() - 1);
+            
+            const gastosActual = state.gastos.filter(g => {
+                const f = new Date(g.fecha);
+                return f >= inicioActual && f <= finActual;
+            });
+            
+            const gastosAnterior = state.gastos.filter(g => {
+                const f = new Date(g.fecha);
+                return f >= inicioAnterior && f <= finAnterior;
+            });
+            
+            const totalActual = gastosActual.reduce((sum, g) => sum + parseFloat(g.monto), 0);
+            const totalAnterior = gastosAnterior.reduce((sum, g) => sum + parseFloat(g.monto), 0);
+            
+            const diferencia = totalActual - totalAnterior;
+            const porcentajeCambio = totalAnterior > 0 ? (diferencia / totalAnterior) * 100 : 0;
+            
+            return {
+                totalActual,
+                totalAnterior,
+                diferencia,
+                porcentajeCambio,
+                gastosActual: gastosActual.length,
+                gastosAnterior: gastosAnterior.length
+            };
+        }
+        // ============================================
+        // ALERTAS
+        // ============================================
+        function verificarAlertas() {
+            const nuevasAlertas = [];
+            const stats = calcularEstadisticas();
+            const hoy = obtenerFechaActual();
+
+            // Alerta: Días para cobrar
+            if (state.alertasConfig.diasParaCobro > 0 && stats.diasRestantes <= state.alertasConfig.diasParaCobro) {
+                nuevasAlertas.push({
+                    tipo: 'info',
+                    mensaje: `⏰ Quedan ${stats.diasRestantes} días para cobrar`,
+                    id: 'dias-cobro'
+                });
+            }
+
+            // Alerta: % gastado antes de mitad
+            const mitadPeriodo = Math.floor(stats.diasTotalesPeriodo / 2);
+            if (stats.diasTranscurridos < mitadPeriodo && stats.porcentajeGastado > state.alertasConfig.porcentajeGastoMitadMes) {
+                nuevasAlertas.push({
+                    tipo: 'warning',
+                    mensaje: `⚠️ Gastaches o ${stats.porcentajeGastado.toFixed(1)}% antes da metade do período`,
+                    id: 'gasto-mitad'
+                });
+            }
+
+            // Alerta: Objetivos en riesgo
+            if (state.alertasConfig.alertaObjetivosEnRiesgo) {
+                state.objetivosAhorro.forEach(objetivo => {
+                    if (objetivo.activo !== false) {
+                        const fechaLimite = new Date(objetivo.fechaLimite);
+                        const diasRestantes = Math.ceil((fechaLimite - hoy) / (1000 * 60 * 60 * 24));
+                        const montoRestante = parseFloat(objetivo.metaMonto) - parseFloat(objetivo.montoAhorrado || 0);
+                        const ahorroDiarioNecesario = diasRestantes > 0 ? montoRestante / diasRestantes : 0;
+                        
+                        if (ahorroDiarioNecesario > stats.gastoPorDiaRestante && diasRestantes > 0) {
+                            nuevasAlertas.push({
+                                tipo: 'danger',
+                                mensaje: `🎯 O teu obxectivo "${objetivo.nombre}" está en risco. Necesitas aforrar ${ahorroDiarioNecesario.toFixed(2)}€/día`,
+                                id: `objetivo-riesgo-${objetivo.id}`
+                            });
+                        }
+                    }
+                });
+            }
+
+            // Alerta: Saldo negativo
+            state.cuentas.forEach(cuenta => {
+                if (cuenta.saldo < 0) {
+                    nuevasAlertas.push({
+                        tipo: 'danger',
+                        mensaje: `💳 A túa conta "${cuenta.nombre}" ten saldo negativo: ${cuenta.saldo.toFixed(2)}€`,
+                        id: `cuenta-negativa-${cuenta.id}`
+                    });
+                }
+            });
+
+            // Alerta: Días sin gastos
+            if (state.gastos.length > 0 && state.alertasConfig.diasSinGastos > 0) {
+                const ultimoGasto = state.gastos.reduce((max, g) => {
+                    const f = new Date(g.fecha);
+                    return f > max ? f : max;
+                }, new Date(0));
+                
+                const diasSinGastos = Math.floor((hoy - ultimoGasto) / (1000 * 60 * 60 * 24));
+                
+                if (diasSinGastos >= state.alertasConfig.diasSinGastos) {
+                    nuevasAlertas.push({
+                        tipo: 'info',
+                        mensaje: `📝 Levas ${diasSinGastos} días sen rexistrar gastos`,
+                        id: 'dias-sin-gastos'
+                    });
+                }
+            }
+
+            state.alertasMostradas = nuevasAlertas;
+        }
+
+        // ============================================
+        // RECORDATORIOS
+        // ============================================
+        function verificarRecordatorios() {
+            const hoy = obtenerFechaActual();
+            
+            state.recordatorios.forEach(rec => {
+                if (!rec.activo) return;
+                
+                const fechaRecordatorio = new Date(rec.fecha);
+                
+                // Si es hoy y no se ha notificado
+                if (fechaRecordatorio.toDateString() === hoy.toDateString() && !rec.notificado) {
+                    mostrarToast(`🔔 Recordatorio: ${rec.descripcion}`, 'info');
+                    
+                    if (state.notificacionesActivadas) {
+                        enviarNotificacion('Recordatorio de pago', rec.descripcion);
+                    }
+                    
+                    rec.notificado = true;
+                    guardarEstado();
+                }
+                
+                // Resetear notificación si es de otro día
+                if (fechaRecordatorio.toDateString() !== hoy.toDateString()) {
+                    rec.notificado = false;
+                }
+            });
+        }
+
+        function agregarRecordatorio(descripcion, fecha, recurrente = false) {
+            state.recordatorios.push({
+                id: Date.now(),
+                descripcion,
+                fecha: fecha,
+                activo: true,
+                notificado: false,
+                recurrente
+            });
+            guardarEstado();
+            mostrarToast('✅ Recordatorio engadido', 'success');
+        }
+
+        function eliminarRecordatorio(id) {
+            state.recordatorios = state.recordatorios.filter(r => r.id !== id);
+            guardarEstado();
+            render();
+        }
+
+        // ============================================
+        // NOTIFICACIÓNS
+        // ============================================
+        function solicitarPermisosNotificacion() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        state.notificacionesActivadas = true;
+                        guardarEstado();
+                        mostrarToast('✅ Notificacións activadas', 'success');
+                    }
+                });
+            }
+        }
+
+        function enviarNotificacion(titulo, mensaje) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(titulo, {
+                    body: mensaje,
+                    icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E💰%3C/text%3E%3C/svg%3E',
+                    badge: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E💰%3C/text%3E%3C/svg%3E'
+                });
+            }
+        }
+        // ============================================
+        // GESTIÓN DE GASTOS
+        // ============================================
+        function agregarGasto() {
+            try {
+                const textoInput = document.getElementById('gasto-texto');
+                const texto = textoInput ? textoInput.value : '';
+                const montoManual = document.getElementById('gasto-monto') ? document.getElementById('gasto-monto').value : '';
+                const categoriaManual = document.getElementById('gasto-categoria') ? document.getElementById('gasto-categoria').value : '';
+                const cuentaId = parseInt(document.getElementById('gasto-cuenta').value);
+                
+                let descripcion, monto, categoria;
+                
+                if (texto) {
+                    const parseado = parsearTextoInteligente(texto);
+                    if (parseado && parseado.monto) {
+                        descripcion = parseado.descripcion;
+                        monto = parseado.monto;
+                        categoria = parseado.categoria;
+                        textoInput.value = '';
+                    } else {
+                        descripcion = parseado ? parseado.descripcion : 'Gasto';
+                        monto = montoManual ? parseFloat(montoManual) : null;
+                        categoria = parseado ? parseado.categoria : categoriaManual;
+                    }
+                } else {
+                    descripcion = 'Gasto';
+                    monto = montoManual ? parseFloat(montoManual) : null;
+                    categoria = categoriaManual;
+                }
+                
+                if (monto && monto > 0) {
+                    // Validar modo ahorro extremo
+                    const validacion = validarGastoModoAhorroExtremo(categoria, monto);
+                    
+                    if (!validacion.permitido) {
+                        if (confirm(`${validacion.mensaje}\n\nQueres engadir este gasto igualmente?`)) {
+                            // Usuario forzó el gasto
+                        } else {
+                            return;
+                        }
+                    } else if (validacion.tipo === 'advertencia') {
+                        mostrarToast(validacion.mensaje, 'warning');
+                    }
+                    
+                    const nuevoGasto = {
+                        descripcion,
+                        monto: monto,
+                        categoria,
+                        cuentaId,
+                        fecha: obtenerFechaActual().toISOString(),
+                        id: Date.now()
+                    };
+                    
+                    state.gastos.push(nuevoGasto);
+                    recalcularSaldosCuentas();
+                    
+                    if (document.getElementById('gasto-monto')) {
+                        document.getElementById('gasto-monto').value = '';
+                    }
+                    
+                    guardarEstado();
+                    verificarAlertas();
+                    
+                    cerrarModal();
+                    render();
+                    
+                    mostrarToast(`✅ Gasto engadido: ${monto.toFixed(2)}€`, 'success');
+                }
+            } catch (error) {
+                console.error('Erro ao engadir gasto:', error);
+                mostrarToast('❌ Erro ao engadir o gasto', 'error');
+            }
+        }
+
+        function eliminarGasto(id) {
+            if (confirm('Seguro que queres eliminar este gasto?')) {
+                const gasto = state.gastos.find(g => g.id === id);
+                if (gasto) {
+                    state.gastos = state.gastos.filter(g => g.id !== id);
+                    recalcularSaldosCuentas();
+                    guardarEstado();
+                    render();
+                    mostrarToast('🗑️ Gasto eliminado', 'info');
+                }
+            }
+        }
+
+        function editarGasto(id) {
+            const gasto = state.gastos.find(g => g.id === id);
+            if (gasto) {
+                state.editando = { tipo: 'gasto', id: id, data: {...gasto} };
+                render();
+            }
+        }
+
+        function guardarEdicionGasto(id) {
+            const gasto = state.gastos.find(g => g.id === id);
+            
+            gasto.descripcion = document.getElementById(`edit-desc-${id}`).value || 'Gasto';
+            gasto.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
+            gasto.categoria = document.getElementById(`edit-cat-${id}`).value;
+            gasto.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
+            
+            recalcularSaldosCuentas();
+            
+            state.editando = null;
+            guardarEstado();
+            render();
+            
+            mostrarToast('✅ Gasto actualizado', 'success');
+        }
+
+        function cancelarEdicion() {
+            state.editando = null;
+            render();
+        }
+
+        // ============================================
+        // GESTIÓN DE INGRESOS
+        // ============================================
+        function agregarIngreso() {
+            const descripcion = document.getElementById('ingreso-descripcion').value || 'Ingreso';
+            const monto = document.getElementById('ingreso-monto').value;
+            const cuentaId = parseInt(document.getElementById('ingreso-cuenta').value);
+            
+            if (monto && parseFloat(monto) > 0) {
+                state.ingresos.push({
+                    descripcion,
+                    monto: parseFloat(monto),
+                    cuentaId,
+                    fecha: obtenerFechaActual().toISOString(),
+                    id: Date.now()
+                });
+                
+                recalcularSaldosCuentas();
+                
+                document.getElementById('ingreso-descripcion').value = '';
+                document.getElementById('ingreso-monto').value = '';
+                
+                guardarEstado();
+                cerrarModal();
+                render();
+                
+                mostrarToast(`✅ Ingreso engadido: ${parseFloat(monto).toFixed(2)}€`, 'success');
+            }
+        }
+
+        function eliminarIngreso(id) {
+            if (confirm('Seguro que queres eliminar este ingreso?')) {
+                const ingreso = state.ingresos.find(i => i.id === id);
+                if (ingreso) {
+                    state.ingresos = state.ingresos.filter(i => i.id !== id);
+                    recalcularSaldosCuentas();
+                    guardarEstado();
+                    render();
+                    mostrarToast('🗑️ Ingreso eliminado', 'info');
+                }
+            }
+        }
+
+        function editarIngreso(id) {
+            const ingreso = state.ingresos.find(i => i.id === id);
+            if (ingreso) {
+                state.editando = { tipo: 'ingreso', id: id, data: {...ingreso} };
+                render();
+            }
+        }
+
+        function guardarEdicionIngreso(id) {
+            const ingreso = state.ingresos.find(i => i.id === id);
+            
+            ingreso.descripcion = document.getElementById(`edit-desc-${id}`).value || 'Ingreso';
+            ingreso.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
+            ingreso.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
+            
+            recalcularSaldosCuentas();
+            
+            state.editando = null;
+            guardarEstado();
+            render();
+            
+            mostrarToast('✅ Ingreso actualizado', 'success');
+        }
+
+        // ============================================
+        // GASTOS RECURRENTES
+        // ============================================
+        function agregarGastoRecurrente() {
+            const nombre = document.getElementById('gasto-rec-nombre').value;
+            const monto = document.getElementById('gasto-rec-monto').value;
+            const categoria = document.getElementById('gasto-rec-categoria').value;
+            const cuentaId = parseInt(document.getElementById('gasto-rec-cuenta').value);
+            
+            if (nombre && monto && parseFloat(monto) > 0) {
+                state.gastosRecurrentes.push({
+                    nombre,
+                    monto: parseFloat(monto),
+                    categoria,
+                    cuentaId,
+                    id: Date.now()
+                });
+                document.getElementById('gasto-rec-nombre').value = '';
+                document.getElementById('gasto-rec-monto').value = '';
+                guardarEstado();
+                render();
+                mostrarToast('✅ Gasto recorrente engadido', 'success');
+            }
+        }
+
+        function eliminarGastoRecurrente(id) {
+            if (confirm('Seguro que queres eliminar este gasto recorrente?')) {
+                state.gastosRecurrentes = state.gastosRecurrentes.filter(g => g.id !== id);
+                guardarEstado();
+                render();
+                mostrarToast('🗑️ Gasto recorrente eliminado', 'info');
+            }
+        }
+
+        function editarGastoRecurrente(id) {
+            const gasto = state.gastosRecurrentes.find(g => g.id === id);
+            if (gasto) {
+                state.editando = { tipo: 'gastoRecurrente', id: id, data: {...gasto} };
+                render();
+            }
+        }
+
+        function guardarEdicionGastoRecurrente(id) {
+            const gasto = state.gastosRecurrentes.find(g => g.id === id);
+            
+            gasto.nombre = document.getElementById(`edit-nombre-${id}`).value;
+            gasto.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
+            gasto.categoria = document.getElementById(`edit-cat-${id}`).value;
+            gasto.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
+            
+            state.editando = null;
+            guardarEstado();
+            render();
+            mostrarToast('✅ Gasto recorrente actualizado', 'success');
+        }
+
+        // ============================================
+        // OBJETIVOS
+        // ============================================
+        function agregarObjetivo() {
+            const nombre = document.getElementById('objetivo-nombre').value;
+            const metaMonto = document.getElementById('objetivo-meta').value;
+            const fechaLimite = document.getElementById('objetivo-fecha').value;
+            
+            if (nombre && metaMonto && parseFloat(metaMonto) > 0 && fechaLimite) {
+                state.objetivosAhorro.push({
+                    nombre,
+                    metaMonto: parseFloat(metaMonto),
+                    fechaLimite,
+                    montoAhorrado: 0,
+                    id: Date.now(),
+                    activo: true
+                });
+                
+                document.getElementById('objetivo-nombre').value = '';
+                document.getElementById('objetivo-meta').value = '';
+                document.getElementById('objetivo-fecha').value = '';
+                
+                guardarEstado();
+                render();
+                mostrarToast('✅ Obxectivo creado', 'success');
+            }
+        }
+
+        function eliminarObjetivo(id) {
+            if (confirm('Seguro que queres eliminar este obxectivo?')) {
+                state.objetivosAhorro = state.objetivosAhorro.filter(o => o.id !== id);
+                guardarEstado();
+                render();
+                mostrarToast('🗑️ Obxectivo eliminado', 'info');
+            }
+        }
+
+        function anadirAhorroObjetivo(objetivoId, monto) {
+            const objetivo = state.objetivosAhorro.find(o => o.id === objetivoId);
+            if (objetivo && monto > 0) {
+                objetivo.montoAhorrado = parseFloat(objetivo.montoAhorrado || 0) + parseFloat(monto);
+                
+                // Verificar si se completó
+                if (objetivo.montoAhorrado >= objetivo.metaMonto) {
+                    mostrarToast(`🎉 Obxectivo "${objetivo.nombre}" completado!`, 'success');
+                    if (state.notificacionesActivadas) {
+                        enviarNotificacion('Obxectivo completado!', `Conseguiches o teu obxectivo: ${objetivo.nombre}`);
+                    }
+                }
+                
+                guardarEstado();
+                render();
+            }
+        }
+
+        // ============================================
+        // CATEGORÍAS
+        // ============================================
+        function agregarCategoria() {
+            const nuevaCategoria = document.getElementById('nueva-categoria').value;
+            if (nuevaCategoria && !state.categorias.includes(nuevaCategoria)) {
+                state.categorias.push(nuevaCategoria);
+                document.getElementById('nueva-categoria').value = '';
+                guardarEstado();
+                render();
+                mostrarToast('✅ Categoría engadida', 'success');
+            }
+        }
+
+        function eliminarCategoria(categoria) {
+            if (state.categorias.length > 1) {
+                if (confirm(`Seguro que queres eliminar a categoría "${categoria}"?`)) {
+                    state.categorias = state.categorias.filter(c => c !== categoria);
+                    guardarEstado();
+                    render();
+                    mostrarToast('🗑️ Categoría eliminada', 'info');
+                }
+            } else {
+                mostrarToast('❌ Non podes eliminar a última categoría', 'error');
+            }
+        }
+
+        // ============================================
+        // CUENTAS
+        // ============================================
+        function agregarCuenta() {
+            const nombre = document.getElementById('cuenta-nombre').value;
+            const tipo = document.getElementById('cuenta-tipo').value;
+            const saldoInicial = document.getElementById('cuenta-saldo').value;
+            
+            if (nombre) {
+                const nuevoId = Math.max(...state.cuentas.map(c => c.id), 0) + 1;
+                state.cuentas.push({
+                    id: nuevoId,
+                    nombre,
+                    tipo,
+                    saldoInicial: parseFloat(saldoInicial || 0),
+                    saldo: parseFloat(saldoInicial || 0)
+                });
+                
+                document.getElementById('cuenta-nombre').value = '';
+                document.getElementById('cuenta-saldo').value = '';
+                
+                recalcularSaldosCuentas();
+                guardarEstado();
+                render();
+                mostrarToast('✅ Conta engadida', 'success');
+            }
+        }
+
+        function eliminarCuenta(id) {
+            if (state.cuentas.length > 1) {
+                if (confirm('Seguro que queres eliminar esta conta?')) {
+                    state.cuentas = state.cuentas.filter(c => c.id !== id);
+                    guardarEstado();
+                    render();
+                    mostrarToast('🗑️ Conta eliminada', 'info');
+                }
+            } else {
+                mostrarToast('❌ Non podes eliminar a última conta', 'error');
+            }
+        }
+        // ============================================
+        // GESTOS TÁCTILES (SWIPE TO DELETE)
+        // ============================================
+        function iniciarSwipe(event, id, tipo) {
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+            swipeElement = event.currentTarget;
+        }
+
+        function moverSwipe(event) {
+            if (!swipeElement) return;
+            
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
+            const diffX = touchStartX - touchX;
+            const diffY = Math.abs(touchStartY - touchY);
+            
+            // Solo swipe horizontal
+            if (diffY < 30 && diffX > 0) {
+                const translateX = Math.min(diffX, 80);
+                swipeElement.style.transform = `translateX(-${translateX}px)`;
+                
+                const deleteBtn = swipeElement.querySelector('.swipe-delete');
+                if (deleteBtn) {
+                    deleteBtn.style.opacity = translateX / 80;
+                }
+            }
+        }
+
+        function finalizarSwipe(event, id, tipo) {
+            if (!swipeElement) return;
+            
+            const touchX = event.changedTouches[0].clientX;
+            const diffX = touchStartX - touchX;
+            
+            if (diffX > 80) {
+                // Swipe completo - eliminar
+                swipeElement.style.transform = 'translateX(-100%)';
+                swipeElement.style.opacity = '0';
+                
+                setTimeout(() => {
+                    if (tipo === 'gasto') {
+                        eliminarGasto(id);
+                    } else if (tipo === 'ingreso') {
+                        eliminarIngreso(id);
+                    }
+                }, 300);
+            } else {
+                // Swipe incompleto - volver
+                swipeElement.style.transform = 'translateX(0)';
+                const deleteBtn = swipeElement.querySelector('.swipe-delete');
+                if (deleteBtn) {
+                    deleteBtn.style.opacity = '0';
+                }
+            }
+            
+            swipeElement = null;
+        }
+
+        // ============================================
+        // BÚSQUEDA
+        // ============================================
+        function mostrarBusqueda() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.onclick = (e) => {
+                if (e.target === modal) cerrarModal();
+            };
+            
+            modal.innerHTML = `
+                <div class="modal-content p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-white">🔍 Buscar</h2>
+                        <button onclick="cerrarModal()" class="text-gray-400 hover:text-white text-2xl">×</button>
+                    </div>
+                    
+                    <div class="search-container mb-4">
+                        <input 
+                            type="text"
+                            id="busqueda-texto"
+                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                            placeholder="Buscar gastos ou ingresos..."
+                            oninput="buscarTransacciones(this.value)"
+                            autofocus
+                        />
+                    </div>
+                    
+                    <div class="mb-4 flex gap-2">
+                        <select id="busqueda-categoria" onchange="aplicarFiltros()" class="input-neon px-4 py-2 rounded-xl text-white flex-1">
+                            <option value="">Todas as categorías</option>
+                            ${state.categorias.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                        </select>
+                        
+                        <select id="busqueda-cuenta" onchange="aplicarFiltros()" class="input-neon px-4 py-2 rounded-xl text-white flex-1">
+                            <option value="">Todas as contas</option>
+                            ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4 flex gap-2">
+                        <input type="date" id="busqueda-desde" onchange="aplicarFiltros()" class="input-neon px-4 py-2 rounded-xl text-white flex-1" />
+                        <input type="date" id="busqueda-hasta" onchange="aplicarFiltros()" class="input-neon px-4 py-2 rounded-xl text-white flex-1" />
+                    </div>
+                    
+                    <div id="resultados-busqueda" class="space-y-2 max-h-96 overflow-y-auto">
+                        <p class="text-gray-400 text-center py-8">Escribe para buscar...</p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function buscarTransacciones(texto) {
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            const texto = document.getElementById('busqueda-texto')?.value.toLowerCase() || '';
+            const categoria = document.getElementById('busqueda-categoria')?.value || '';
+            const cuentaId = document.getElementById('busqueda-cuenta')?.value || '';
+            const desde = document.getElementById('busqueda-desde')?.value || '';
+            const hasta = document.getElementById('busqueda-hasta')?.value || '';
+            
+            let resultados = [];
+            
+            // Buscar en gastos
+            state.gastos.forEach(g => {
+                let coincide = true;
+                
+                if (texto && !g.descripcion.toLowerCase().includes(texto)) {
+                    coincide = false;
+                }
+                
+                if (categoria && g.categoria !== categoria) {
+                    coincide = false;
+                }
+                
+                if (cuentaId && g.cuentaId !== parseInt(cuentaId)) {
+                    coincide = false;
+                }
+                
+                if (desde && new Date(g.fecha) < new Date(desde)) {
+                    coincide = false;
+                }
+                
+                if (hasta && new Date(g.fecha) > new Date(hasta)) {
+                    coincide = false;
+                }
+                
+                if (coincide) {
+                    resultados.push({ tipo: 'gasto', data: g });
+                }
+            });
+            
+            // Buscar en ingresos
+            state.ingresos.forEach(i => {
+                let coincide = true;
+                
+                if (texto && !i.descripcion.toLowerCase().includes(texto)) {
+                    coincide = false;
+                }
+                
+                if (cuentaId && i.cuentaId !== parseInt(cuentaId)) {
+                    coincide = false;
+                }
+                
+                if (desde && new Date(i.fecha) < new Date(desde)) {
+                    coincide = false;
+                }
+                
+                if (hasta && new Date(i.fecha) > new Date(hasta)) {
+                    coincide = false;
+                }
+                
+                if (coincide) {
+                    resultados.push({ tipo: 'ingreso', data: i });
+                }
+            });
+            
+            // Ordenar por fecha (más reciente primero)
+            resultados.sort((a, b) => new Date(b.data.fecha) - new Date(a.data.fecha));
+            
+            mostrarResultadosBusqueda(resultados);
+        }
+
+        function mostrarResultadosBusqueda(resultados) {
+            const container = document.getElementById('resultados-busqueda');
+            if (!container) return;
+            
+            if (resultados.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">Sen resultados</p>';
+                return;
+            }
+            
+            container.innerHTML = resultados.map(r => {
+                const item = r.data;
+                const fecha = formatearFecha(item.fecha);
+                const cuenta = state.cuentas.find(c => c.id === item.cuentaId);
+                
+                if (r.tipo === 'gasto') {
+                    return `
+                        <div class="bg-black/30 rounded-xl p-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-2xl">${obtenerIconoCategoria(item.categoria)}</span>
+                                        <div>
+                                            <p class="text-white font-semibold">${item.descripcion}</p>
+                                            <p class="text-gray-400 text-xs">${fecha} - ${item.categoria} - ${cuenta?.nombre || 'Sen conta'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="text-red-400 font-bold">-${parseFloat(item.monto).toFixed(2)}€</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="bg-black/30 rounded-xl p-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-2xl">💰</span>
+                                        <div>
+                                            <p class="text-white font-semibold">${item.descripcion}</p>
+                                            <p class="text-gray-400 text-xs">${fecha} - ${cuenta?.nombre || 'Sen conta'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="text-green-400 font-bold">+${parseFloat(item.monto).toFixed(2)}€</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        // ============================================
+        // WIDGET RESUMEN
+        // ============================================
+        function mostrarWidget() {
+            state.widgetVisible = !state.widgetVisible;
+            guardarEstado();
+            actualizarWidget();
+        }
+
+        function actualizarWidget() {
+            const widget = document.getElementById('widget-summary');
+            const widgetAmount = document.getElementById('widget-amount');
+            
+            if (state.widgetVisible && widget && widgetAmount) {
+                const stats = calcularEstadisticas();
+                widget.style.display = 'block';
+                widgetAmount.textContent = `${stats.gastoPorDiaRestante.toFixed(2)}€`;
+            } else if (widget) {
+                widget.style.display = 'none';
+            }
+        }
+
+        // ============================================
+        // TOAST NOTIFICATIONS
+        // ============================================
+        function mostrarToast(mensaje, tipo = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            
+            const colores = {
+                success: 'from-green-600 to-emerald-600',
+                error: 'from-red-600 to-rose-600',
+                warning: 'from-yellow-600 to-orange-600',
+                info: 'from-purple-600 to-pink-600'
+            };
+            
+            toast.style.background = `linear-gradient(135deg, var(--tw-gradient-stops))`;
+            toast.className += ` bg-gradient-to-r ${colores[tipo] || colores.info}`;
+            toast.textContent = mensaje;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'toastSlide 0.4s ease reverse';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // ============================================
+        // MODALES
+        // ============================================
+        function cerrarModal() {
+            const modales = document.querySelectorAll('.modal-overlay');
+            modales.forEach(modal => {
+                modal.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => modal.remove(), 300);
+            });
+        }
+
+        function mostrarModalGasto() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.onclick = (e) => {
+                if (e.target === modal) cerrarModal();
+            };
+            
+            modal.innerHTML = `
+                <div class="modal-content p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-white">💸 Novo Gasto</h2>
+                        <button onclick="cerrarModal()" class="text-gray-400 hover:text-white text-2xl">×</button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Descrición (ou texto intelixente)</label>
+                            <input 
+                                type="text"
+                                id="gasto-texto"
+                                class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                placeholder="ej: mercadona 23.50"
+                                oninput="
+                                    const parseado = parsearTextoInteligente(this.value);
+                                    if (parseado && parseado.monto) {
+                                        document.getElementById('gasto-monto').value = parseado.monto;
+                                        document.getElementById('gasto-categoria').value = parseado.categoria;
+                                    }
+                                "
+                            />
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Monto (€)</label>
+                            <input 
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                id="gasto-monto"
+                                class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                placeholder="0.00"
+                                inputmode="decimal"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Categoría</label>
+                            <select id="gasto-categoria" class="input-neon w-full px-4 py-3 rounded-xl text-white">
+                                ${state.categorias.map(cat => `
+                                    <option value="${cat}">${obtenerIconoCategoria(cat)} ${cat}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Conta</label>
+                            <select id="gasto-cuenta" class="input-neon w-full px-4 py-3 rounded-xl text-white">
+                                ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <button 
+                            onclick="agregarGasto()"
+                            class="btn-neon w-full bg-gradient-to-r from-pink-600 to-red-600 px-6 py-4 rounded-xl font-bold text-lg"
+                        >
+                            ✅ Engadir Gasto
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Autofocus
+            setTimeout(() => {
+                document.getElementById('gasto-texto')?.focus();
+            }, 100);
+        }
+
+        function mostrarModalIngreso() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.onclick = (e) => {
+                if (e.target === modal) cerrarModal();
+            };
+            
+            modal.innerHTML = `
+                <div class="modal-content p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-white">💰 Novo Ingreso</h2>
+                        <button onclick="cerrarModal()" class="text-gray-400 hover:text-white text-2xl">×</button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Descrición</label>
+                            <input 
+                                type="text"
+                                id="ingreso-descripcion"
+                                class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                placeholder="Ingreso extra, paga, etc."
+                            />
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Monto (€)</label>
+                            <input 
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                id="ingreso-monto"
+                                class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                placeholder="0.00"
+                                inputmode="decimal"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Conta</label>
+                            <select id="ingreso-cuenta" class="input-neon w-full px-4 py-3 rounded-xl text-white">
+                                ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <button 
+                            onclick="agregarIngreso()"
+                            class="btn-neon w-full bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 rounded-xl font-bold text-lg"
+                        >
+                            ✅ Engadir Ingreso
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            setTimeout(() => {
+                document.getElementById('ingreso-descripcion')?.focus();
+            }, 100);
+        }
+        // ============================================
+        // EXPORTAR / IMPORTAR DATOS
+        // ============================================
+        function exportarDatosCSV() {
+            try {
+                // Crear CSV
+                let csv = 'Tipo,Descrición,Monto,Categoría,Conta,Fecha\n';
+                
+                // Gastos
+                state.gastos.forEach(g => {
+                    const cuenta = state.cuentas.find(c => c.id === g.cuentaId);
+                    csv += `Gasto,"${g.descripcion}",${g.monto},"${g.categoria || 'Sen categoría'}","${cuenta?.nombre || 'Sen conta'}",${g.fecha}\n`;
+                });
+                
+                // Ingresos
+                state.ingresos.forEach(i => {
+                    const cuenta = state.cuentas.find(c => c.id === i.cuentaId);
+                    csv += `Ingreso,"${i.descripcion}",${i.monto},,"${cuenta?.nombre || 'Sen conta'}",${i.fecha}\n`;
+                });
+                
+                // Descargar
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `cartinos_${fecha}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                mostrarToast('✅ Datos exportados a CSV', 'success');
+            } catch (error) {
+                console.error('Erro ao exportar:', error);
+                mostrarToast('❌ Erro ao exportar datos', 'error');
+            }
+        }
+
+        function exportarDatosJSON() {
+            try {
+                const datos = {
+                    version: '1.0',
+                    fecha_exportacion: new Date().toISOString(),
+                    datos: {
+                        sueldo: state.sueldo,
+                        diaCobro: state.diaCobro,
+                        gastosRecurrentes: state.gastosRecurrentes,
+                        gastos: state.gastos,
+                        ingresos: state.ingresos,
+                        ajustes: state.ajustes,
+                        objetivosAhorro: state.objetivosAhorro,
+                        categorias: state.categorias,
+                        cuentas: state.cuentas,
+                        alertasConfig: state.alertasConfig,
+                        modoAhorroExtremo: state.modoAhorroExtremo,
+                        recordatorios: state.recordatorios
+                    }
+                };
+                
+                const json = JSON.stringify(datos, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `cartinos_backup_${fecha}.json`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                mostrarToast('✅ Backup completo creado', 'success');
+            } catch (error) {
+                console.error('Erro ao exportar JSON:', error);
+                mostrarToast('❌ Erro ao crear backup', 'error');
+            }
+        }
+
+        function importarDatos() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const datos = JSON.parse(event.target.result);
+                        
+                        if (!datos.version || !datos.datos) {
+                            throw new Error('Formato de arquivo inválido');
+                        }
+                        
+                        if (confirm('ATENCIÓN: Isto substituirá todos os teus datos actuais. Estás seguro?')) {
+                            // Restaurar datos
+                            state.sueldo = datos.datos.sueldo || '';
+                            state.diaCobro = datos.datos.diaCobro || '';
+                            state.gastosRecurrentes = datos.datos.gastosRecurrentes || [];
+                            state.gastos = datos.datos.gastos || [];
+                            state.ingresos = datos.datos.ingresos || [];
+                            state.ajustes = datos.datos.ajustes || [];
+                            state.objetivosAhorro = datos.datos.objetivosAhorro || [];
+                            state.categorias = datos.datos.categorias || ['Alimentación', 'Transporte', 'Entretenimiento', 'Salud', 'Hogar', 'Ropa', 'Outros'];
+                            state.cuentas = datos.datos.cuentas || [];
+                            state.alertasConfig = datos.datos.alertasConfig || {};
+                            state.modoAhorroExtremo = datos.datos.modoAhorroExtremo || {};
+                            state.recordatorios = datos.datos.recordatorios || [];
+                            
+                            guardarEstado();
+                            recalcularSaldosCuentas();
+                            render();
+                            
+                            mostrarToast('✅ Datos importados correctamente', 'success');
+                        }
+                    } catch (error) {
+                        console.error('Erro ao importar:', error);
+                        mostrarToast('❌ Erro ao importar datos. Arquivo inválido.', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        function verificarBackupAutomatico() {
+            if (!state.backupConfig.activo) return;
+            
+            const ahora = new Date();
+            const ultimoBackup = state.backupConfig.ultimoBackup ? new Date(state.backupConfig.ultimoBackup) : null;
+            
+            let debeHacerBackup = false;
+            
+            if (!ultimoBackup) {
+                debeHacerBackup = true;
+            } else {
+                const diasDesdeUltimoBackup = Math.floor((ahora - ultimoBackup) / (1000 * 60 * 60 * 24));
+                
+                if (state.backupConfig.frecuencia === 'diario' && diasDesdeUltimoBackup >= 1) {
+                    debeHacerBackup = true;
+                } else if (state.backupConfig.frecuencia === 'semanal' && diasDesdeUltimoBackup >= 7) {
+                    debeHacerBackup = true;
+                } else if (state.backupConfig.frecuencia === 'mensual' && diasDesdeUltimoBackup >= 30) {
+                    debeHacerBackup = true;
+                }
+            }
+            
+            if (debeHacerBackup) {
+                exportarDatosJSON();
+                state.backupConfig.ultimoBackup = ahora.toISOString();
+                guardarEstado();
+            }
+        }
+
+        // ============================================
+        // ANÁLISE DE TENDENCIAS (IA Básica)
+        // ============================================
+        function analizarTendencias() {
+            const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+            const gastosDelPeriodo = state.gastos.filter(g => {
+                const f = new Date(g.fecha);
+                return f >= inicioPeriodo && f <= finPeriodo;
+            });
+            
+            if (gastosDelPeriodo.length === 0) {
+                return {
+                    insights: ['Non hai suficientes datos para analizar tendencias'],
+                    recomendaciones: []
+                };
+            }
+            
+            const insights = [];
+            const recomendaciones = [];
+            
+            // Análisis por día de la semana
+            const gastosPorDia = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            const cuentaPorDia = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            
+            gastosDelPeriodo.forEach(g => {
+                const dia = new Date(g.fecha).getDay();
+                gastosPorDia[dia] += parseFloat(g.monto);
+                cuentaPorDia[dia]++;
+            });
+            
+            const dias = ['domingo', 'luns', 'martes', 'mércores', 'xoves', 'venres', 'sábado'];
+            let diaMasGasto = 0;
+            let maxGasto = 0;
+            
+            Object.keys(gastosPorDia).forEach(dia => {
+                if (gastosPorDia[dia] > maxGasto) {
+                    maxGasto = gastosPorDia[dia];
+                    diaMasGasto = parseInt(dia);
+                }
+            });
+            
+            if (maxGasto > 0) {
+                insights.push(`💡 Gastas máis os ${dias[diaMasGasto]} (media: ${(maxGasto / (cuentaPorDia[diaMasGasto] || 1)).toFixed(2)}€)`);
+                recomendaciones.push(`Intenta planificar mellor os gastos dos ${dias[diaMasGasto]}`);
+            }
+            
+            // Análisis por categoría
+            const gastosPorCategoria = {};
+            gastosDelPeriodo.forEach(g => {
+                const cat = g.categoria || 'Outros';
+                gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + parseFloat(g.monto);
+            });
+            
+            const categoriaOrdenadas = Object.entries(gastosPorCategoria)
+                .sort((a, b) => b[1] - a[1]);
+            
+            if (categoriaOrdenadas.length > 0) {
+                const [catTop, montoTop] = categoriaOrdenadas[0];
+                const stats = calcularEstadisticas();
+                const porcentaje = (montoTop / stats.totalGastos * 100).toFixed(1);
+                
+                insights.push(`📊 A categoría con máis gasto é "${catTop}" (${porcentaje}% do total)`);
+                
+                if (porcentaje > 40) {
+                    recomendaciones.push(`Considera reducir gastos en "${catTop}" - representa máis do 40% dos teus gastos`);
+                }
+            }
+            
+            // Comparación con período anterior
+            const comparacion = compararPeriodos();
+            if (comparacion.diferencia !== 0) {
+                if (comparacion.diferencia > 0) {
+                    insights.push(`📈 Este mes gastaches ${Math.abs(comparacion.diferencia).toFixed(2)}€ máis que o anterior (+${Math.abs(comparacion.porcentajeCambio).toFixed(1)}%)`);
+                    recomendaciones.push('Intenta controlar os gastos para volver ao nivel do mes pasado');
+                } else {
+                    insights.push(`📉 Moi ben! Gastaches ${Math.abs(comparacion.diferencia).toFixed(2)}€ menos que o mes anterior (-${Math.abs(comparacion.porcentajeCambio).toFixed(1)}%)`);
+                }
+            }
+            
+            // Patrón de gasto diario
+            const stats = calcularEstadisticas();
+            const mediaDiaria = stats.totalGastos / stats.diasTranscurridos;
+            
+            if (mediaDiaria > stats.gastoPorDiaRestante) {
+                insights.push(`⚠️ A túa media diaria de gasto (${mediaDiaria.toFixed(2)}€) supera o dispoñible por día`);
+                recomendaciones.push(`Reduce a media diaria a menos de ${stats.gastoPorDiaRestante.toFixed(2)}€ para non pasarte`);
+            }
+            
+            return { insights, recomendaciones };
+        }
+
+        // ============================================
+        // CAMBIO DE VISTA
+        // ============================================
+        function cambiarVista(nuevaVista) {
+            // Actualizar navegación
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.view === nuevaVista) {
+                    item.classList.add('active');
+                }
+            });
+            
+            state.vista = nuevaVista;
+            render();
+            
+            // Scroll al inicio
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ============================================
+        // GRÁFICOS
+        // ============================================
+        function obtenerDatosGraficoPeriodo() {
+            const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+            
+            const gastosDelPeriodo = state.gastos.filter(gasto => {
+                if (!gasto || !gasto.fecha) return false;
+                const fechaGasto = new Date(gasto.fecha);
+                return fechaGasto >= inicioPeriodo && fechaGasto <= finPeriodo;
+            });
+            
+            const gastosPorCategoria = {};
+            gastosDelPeriodo.forEach(gasto => {
+                const categoria = gasto.categoria || 'Outros';
+                gastosPorCategoria[categoria] = (gastosPorCategoria[categoria] || 0) + parseFloat(gasto.monto || 0);
+            });
+            
+            return Object.entries(gastosPorCategoria).map(([nombre, valor]) => ({
+                nombre,
+                valor
+            }));
+        }
+
+        function crearGraficoPastel() {
+            const canvas = document.getElementById('pieChart');
+            if (!canvas) return;
+            
+            const datosGrafico = obtenerDatosGraficoPeriodo();
+            if (datosGrafico.length === 0) return;
+            
+            new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: datosGrafico.map(d => d.nombre),
+                    datasets: [{
+                        data: datosGrafico.map(d => d.valor),
+                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
+                        borderWidth: 3,
+                        borderColor: '#0f0f23'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ffffff',
+                                padding: 15,
+                                font: { size: 12 },
+                                generateLabels: (chart) => {
+                                    const data = chart.data;
+                                    return data.labels.map((label, i) => ({
+                                        text: `${obtenerIconoCategoria(label)} ${label}`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        hidden: false,
+                                        index: i
+                                    }));
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const porcentaje = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed.toFixed(2)}€ (${porcentaje}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function crearGraficoLinea() {
+            const canvas = document.getElementById('lineChart');
+            if (!canvas) return;
+            
+            const stats = calcularEstadisticas();
+            const gastosPorDia = stats.gastosPorDia;
+            
+            if (Object.keys(gastosPorDia).length === 0) return;
+            
+            // Crear array de fechas del período
+            const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+            const fechas = [];
+            const valores = [];
+            
+            let fechaActual = new Date(inicioPeriodo);
+            while (fechaActual <= finPeriodo) {
+                const fechaStr = fechaActual.toISOString().split('T')[0];
+                fechas.push(new Date(fechaActual).toLocaleDateString('gl-ES', { day: '2-digit', month: '2-digit' }));
+                valores.push(gastosPorDia[fechaStr] || 0);
+                fechaActual.setDate(fechaActual.getDate() + 1);
+            }
+            
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: fechas,
+                    datasets: [{
+                        label: 'Gastos diarios',
+                        data: valores,
+                        borderColor: '#8338EC',
+                        backgroundColor: 'rgba(131, 56, 236, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#FF006E',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y.toFixed(2)}€`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#ffffff',
+                                callback: function(value) {
+                                    return value + '€';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#ffffff',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function crearGraficoProgreso(objetivoId) {
+            const objetivo = state.objetivosAhorro.find(o => o.id === objetivoId);
+            if (!objetivo) return '';
+            
+            const progreso = (parseFloat(objetivo.montoAhorrado || 0) / parseFloat(objetivo.metaMonto)) * 100;
+            const radio = 40;
+            const circunferencia = 2 * Math.PI * radio;
+            const offset = circunferencia - (progreso / 100) * circunferencia;
+            
+            return `
+                <svg width="100" height="100" class="progress-ring">
+                    <circle
+                        cx="50"
+                        cy="50"
+                        r="${radio}"
+                        stroke="rgba(131, 56, 236, 0.2)"
+                        stroke-width="8"
+                        fill="none"
+                    />
+                    <circle
+                        class="progress-ring-circle"
+                        cx="50"
+                        cy="50"
+                        r="${radio}"
+                        stroke="url(#gradient)"
+                        stroke-width="8"
+                        fill="none"
+                        stroke-dasharray="${circunferencia}"
+                        stroke-dashoffset="${offset}"
+                        stroke-linecap="round"
+                    />
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#FF006E;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#8338EC;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <text x="50" y="50" text-anchor="middle" dy=".3em" fill="#fff" font-size="16" font-weight="bold">
+                        ${Math.round(progreso)}%
+                    </text>
+                </svg>
+            `;
+        }
+        // ============================================
+        // RENDER PRINCIPAL
+        // ============================================
+        function render() {
+            procesarGastosRecurrentes();
+            recalcularSaldosCuentas();
+            
+            const app = document.getElementById('app');
+            const stats = calcularEstadisticas();
+            const proyecciones = calcularProyecciones();
+
+            verificarAlertas();
+
+            let html = '<div class="view-container max-w-7xl mx-auto">';
+
+            // Banners globales
+            if (!state.sueldoConfirmadoEsteMes && state.sueldo && state.diaCobro) {
+                html += `
+                    <div class="banner-sueldo-pendiente rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex-1 min-w-[200px]">
+                            <p class="font-bold text-lg">⚠️ Soldo pendente de confirmar</p>
+                            <p class="text-sm text-white/80">Confirma o teu soldo para rexistralo como ingreso</p>
+                        </div>
+                        <button 
+                            onclick="verificarConfirmacionSueldo()"
+                            class="btn-neon bg-white text-purple-900 px-6 py-3 rounded-lg font-bold hover:bg-gray-100"
+                        >
+                            Confirmar agora
+                        </button>
+                    </div>
+                `;
+            }
+
+            if (state.modoAhorroExtremo.activo) {
+                html += `
+                    <div class="banner-modo-ahorro rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex-1 min-w-[200px]">
+                            <p class="font-bold text-lg">🔥 MODO AHORRO EXTREMO ACTIVADO</p>
+                            <p class="text-sm text-white/80">
+                                Só gastos esenciais. Límite diario: ${state.modoAhorroExtremo.limiteGastoDiario > 0 ? state.modoAhorroExtremo.limiteGastoDiario.toFixed(2) + '€' : 'Sen límite'}
+                            </p>
+                        </div>
+                        <button 
+                            onclick="toggleModoAhorroExtremo()"
+                            class="btn-neon bg-white text-red-900 px-6 py-3 rounded-lg font-bold hover:bg-gray-100"
+                        >
+                            Desactivar
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Alertas
+            if (state.alertasMostradas.length > 0) {
+                html += `<div class="mb-6 space-y-3">`;
+                state.alertasMostradas.forEach(alerta => {
+                    const colorBorde = alerta.tipo === 'danger' ? 'border-red-500' : 
+                                     alerta.tipo === 'warning' ? 'border-yellow-500' : 
+                                     'border-blue-500';
+                    html += `
+                        <div class="card-neon rounded-xl p-4 ${colorBorde}" style="border-width: 2px;">
+                            <p class="text-white">${alerta.mensaje}</p>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // VISTA: CARTIÑOS (Principal)
+            if (state.vista === 'cartinos') {
+                html += renderVistaCartinos(stats, proyecciones);
+            }
+            // VISTA: DIÑEIROS
+            else if (state.vista === 'dinheiros') {
+                html += renderVistaDinheiros(stats);
+            }
+            // VISTA: STATS
+            else if (state.vista === 'stats') {
+                html += renderVistaStats(stats);
+            }
+            // VISTA: OBXETIVOS
+            else if (state.vista === 'obxetivos') {
+                html += renderVistaObxetivos();
+            }
+            // VISTA: CATEGORÍAS
+            else if (state.vista === 'categorias') {
+                html += renderVistaCategorias();
+            }
+            // VISTA: AXUSTES
+            else if (state.vista === 'axustes') {
+                html += renderVistaAxustes(stats);
+            }
+
+            html += '</div>';
+            app.innerHTML = html;
+
+            // Inicializar gráficos si estamos en stats
+            if (state.vista === 'stats') {
+                setTimeout(() => {
+                    crearGraficoPastel();
+                    crearGraficoLinea();
+                }, 100);
+            }
+        }
+        // ============================================
+        // RENDER VISTA CARTIÑOS (PRINCIPAL)
+        // ============================================
+        function renderVistaCartinos(stats, proyecciones) {
+            return `
+                <!-- Gasto Disponible por Día -->
+                <div class="flex justify-center mb-8">
+                    <div class="stat-card rounded-3xl p-12 border-4 border-pink-500/50 max-w-2xl w-full text-center pulse-animation">
+                        <div class="flex items-center justify-center mb-4">
+                            <span class="text-6xl">📅</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-300 mb-4">Podes Gastar Hoxe</h2>
+                        <p class="text-7xl md:text-8xl font-black text-yellow-400 mb-2">${stats.gastoPorDiaRestante.toFixed(2)}€</p>
+                        <p class="text-gray-400 text-lg">Quedan ${stats.diasRestantes} días ata cobrar</p>
+                        ${stats.ahorroDiarioNecesario > 0 ? `
+                            <div class="mt-6 pt-6 border-t border-purple-500/30">
+                                <p class="text-cyan-400 text-xl">
+                                    💡 Intenta aforrar ${stats.ahorroDiarioNecesario.toFixed(2)}€ hoxe para os teus obxectivos
+                                </p>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    ✓ O aforro de obxectivos xa está descontado do dispoñible
+                                </p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Botones de Acción Rápida -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <button 
+                        onclick="mostrarModalGasto()"
+                        class="btn-neon bg-gradient-to-r from-pink-600 to-red-600 p-6 rounded-2xl font-bold text-lg flex flex-col items-center gap-2"
+                    >
+                        <span class="text-4xl">💸</span>
+                        <span>Novo Gasto</span>
+                    </button>
+                    <button 
+                        onclick="mostrarModalIngreso()"
+                        class="btn-neon bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-2xl font-bold text-lg flex flex-col items-center gap-2"
+                    >
+                        <span class="text-4xl">💰</span>
+                        <span>Novo Ingreso</span>
+                    </button>
+                </div>
+
+                <!-- Proyecciones -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="card-neon rounded-2xl p-6">
+                        <h3 class="text-xl font-bold text-white mb-4">🔮 Proxección a 3 Meses</h3>
+                        <p class="text-gray-400 mb-2">Se mantés este ritmo:</p>
+                        <p class="text-3xl font-black text-green-400">+${proyecciones.proyeccion3Meses.toFixed(2)}€</p>
+                        <p class="text-gray-400 text-sm mt-2">Aforro mensual: ${proyecciones.ahorroMensualActual.toFixed(2)}€</p>
+                    </div>
+
+                    ${proyecciones.recomendacion ? `
+                        <div class="card-neon rounded-2xl p-6">
+                            <h3 class="text-xl font-bold text-white mb-4">💡 Recomendación</h3>
+                            <p class="text-gray-400 mb-2">Se reduces un 10% en <span class="text-yellow-400 font-semibold">${proyecciones.recomendacion.categoria}</span>:</p>
+                            <p class="text-2xl font-bold text-green-400">+${proyecciones.recomendacion.ahorroPotencial.toFixed(2)}€/mes</p>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Últimos Gastos -->
+                ${state.gastos.length > 0 ? `
+                    <div class="card-neon rounded-2xl p-6">
+                        <h3 class="text-xl font-bold text-white mb-4">📝 Últimos Gastos</h3>
+                        <div class="space-y-2">
+                            ${state.gastos.slice().reverse().slice(0, 5).map(gasto => {
+                                const fecha = new Date(gasto.fecha);
+                                const cuenta = state.cuentas.find(c => c.id === gasto.cuentaId);
+                                const editando = state.editando && state.editando.tipo === 'gasto' && state.editando.id === gasto.id;
+                                
+                                if (editando) {
+                                    return `
+                                        <div class="bg-black/30 rounded-xl p-3">
+                                            <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                                                <input type="text" id="edit-desc-${gasto.id}" value="${gasto.descripcion}" class="input-neon px-2 py-1 rounded text-white text-sm" placeholder="Descrición" />
+                                                <input type="number" step="0.01" min="0" id="edit-monto-${gasto.id}" value="${gasto.monto}" class="input-neon px-2 py-1 rounded text-white text-sm" />
+                                                <select id="edit-cat-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
+                                                    ${state.categorias.map(cat => `<option value="${cat}" ${gasto.categoria === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                                                </select>
+                                                <select id="edit-cuenta-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
+                                                    ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
+                                                </select>
+                                                <div class="flex gap-1">
+                                                    <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
+                                                    <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                                
+                                return `
+                                    <div class="swipe-item bg-black/30 rounded-xl p-3 relative"
+                                         ontouchstart="iniciarSwipe(event, ${gasto.id}, 'gasto')"
+                                         ontouchmove="moverSwipe(event)"
+                                         ontouchend="finalizarSwipe(event, ${gasto.id}, 'gasto')">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex-1 flex items-center gap-3">
+                                                <span class="text-2xl">${obtenerIconoCategoria(gasto.categoria)}</span>
+                                                <div>
+                                                    <p class="text-white font-semibold">${gasto.descripcion}</p>
+                                                    <p class="text-gray-400 text-xs">${formatearFecha(gasto.fecha)} - ${cuenta ? cuenta.nombre : 'Sen conta'}</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-red-400 font-bold">${parseFloat(gasto.monto).toFixed(2)}€</span>
+                                                <button 
+                                                    onclick="editarGasto(${gasto.id})"
+                                                    class="text-blue-500 hover:text-blue-400"
+                                                >
+                                                    ✏️
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="swipe-delete">🗑️</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // ============================================
+        // RENDER VISTA DIÑEIROS
+        // ============================================
+        function renderVistaDinheiros(stats) {
+            return `
+                <!-- Estadísticas Completas -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="stat-card rounded-2xl p-4 border-2 border-purple-500/30">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-gray-400 text-xs">Dispoñible Total</span>
+                            <span class="text-xl">💰</span>
+                        </div>
+                        <p class="text-2xl font-black text-green-400">${stats.disponibleTotal.toFixed(2)}€</p>
+                    </div>
+
+                    <div class="stat-card rounded-2xl p-4 border-2 border-pink-500/30">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-gray-400 text-xs">Por Día</span>
+                            <span class="text-xl">📅</span>
+                        </div>
+                        <p class="text-2xl font-black text-yellow-400">${stats.gastoPorDiaRestante.toFixed(2)}€</p>
+                    </div>
+
+                    <div class="stat-card rounded-2xl p-4 border-2 border-blue-500/30">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-gray-400 text-xs">Días Restantes</span>
+                            <span class="text-xl">⏰</span>
+                        </div>
+                        <p class="text-2xl font-black text-blue-400">${stats.diasRestantes}</p>
+                    </div>
+
+                    <div class="stat-card rounded-2xl p-4 border-2 border-red-500/30">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-gray-400 text-xs">Gastos Totais</span>
+                            <span class="text-xl">💸</span>
+                        </div>
+                        <p class="text-2xl font-black text-red-400">${stats.totalGastos.toFixed(2)}€</p>
+                    </div>
+                </div>
+
+                <!-- Estado de Cuentas -->
+                <div class="card-neon rounded-2xl p-6 mb-6">
+                    <h3 class="text-xl font-bold text-white mb-4">💳 Estado de Contas</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${state.cuentas.map(cuenta => `
+                            <div class="bg-black/30 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-white font-semibold">${cuenta.nombre}</span>
+                                    <span class="text-2xl">${cuenta.tipo === 'banco' ? '🏦' : cuenta.tipo === 'efectivo' ? '💵' : '💳'}</span>
+                                </div>
+                                <p class="text-3xl font-black ${cuenta.saldo >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                    ${cuenta.saldo.toFixed(2)}€
+                                </p>
+                                <p class="text-xs text-gray-400 mt-1">Inicial: ${cuenta.saldoInicial.toFixed(2)}€</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Comparación de Períodos -->
+                ${(() => {
+                    const comparacion = compararPeriodos();
+                    return `
+                        <div class="card-neon rounded-2xl p-6">
+                            <h3 class="text-xl font-bold text-white mb-4">📊 Comparación con Mes Anterior</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-black/30 rounded-xl p-4">
+                                    <p class="text-gray-400 text-sm mb-1">Mes Actual</p>
+                                    <p class="text-2xl font-bold text-white">${comparacion.totalActual.toFixed(2)}€</p>
+                                    <p class="text-xs text-gray-500">${comparacion.gastosActual} gastos</p>
+                                </div>
+                                <div class="bg-black/30 rounded-xl p-4">
+                                    <p class="text-gray-400 text-sm mb-1">Mes Anterior</p>
+                                    <p class="text-2xl font-bold text-white">${comparacion.totalAnterior.toFixed(2)}€</p>
+                                    <p class="text-xs text-gray-500">${comparacion.gastosAnterior} gastos</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <p class="text-lg ${comparacion.diferencia > 0 ? 'text-red-400' : 'text-green-400'}">
+                                    ${comparacion.diferencia > 0 ? '↑' : '↓'} ${Math.abs(comparacion.diferencia).toFixed(2)}€ 
+                                    (${Math.abs(comparacion.porcentajeCambio).toFixed(1)}%)
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                })()}
+            `;
+        }
+
+        // ============================================
+        // RENDER VISTA STATS
+        // ============================================
+        function renderVistaStats(stats) {
+            const datosGrafico = obtenerDatosGraficoPeriodo();
+            const tendencias = analizarTendencias();
+            
+            return `
+                <!-- Información del Período -->
+                <div class="card-neon rounded-2xl p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-4 text-white">📅 Período Actual</h2>
+                    <p class="text-gray-400">
+                        Do <span class="text-white font-semibold">${formatearFecha(stats.inicioPeriodo)}</span> 
+                        ao <span class="text-white font-semibold">${formatearFecha(stats.finPeriodo)}</span>
+                    </p>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <p class="text-gray-400 text-sm">Días transcorridos</p>
+                            <p class="text-2xl font-bold text-blue-400">${stats.diasTranscurridos}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 text-sm">Días restantes</p>
+                            <p class="text-2xl font-bold text-yellow-400">${stats.diasRestantes}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis IA -->
+                ${tendencias.insights.length > 0 || tendencias.recomendaciones.length > 0 ? `
+                    <div class="card-neon rounded-2xl p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-4 text-white">🤖 Análise Intelixente</h2>
+                        
+                        ${tendencias.insights.length > 0 ? `
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold text-cyan-400 mb-3">Insights</h3>
+                                <div class="space-y-2">
+                                    ${tendencias.insights.map(insight => `
+                                        <div class="bg-black/30 rounded-xl p-3">
+                                            <p class="text-white text-sm">${insight}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${tendencias.recomendaciones.length > 0 ? `
+                            <div>
+                                <h3 class="text-lg font-semibold text-yellow-400 mb-3">Recomendacións</h3>
+                                <div class="space-y-2">
+                                    ${tendencias.recomendaciones.map(rec => `
+                                        <div class="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 rounded-xl p-3 border border-yellow-500/30">
+                                            <p class="text-white text-sm">💡 ${rec}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
+
+                <!-- Gráfico de Pastel -->
+                ${datosGrafico.length > 0 ? `
+                    <div class="card-neon rounded-2xl p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">📊 Distribución por Categoría</h2>
+                        <div class="max-w-md mx-auto">
+                            <canvas id="pieChart" width="400" height="400"></canvas>
+                        </div>
+                        <div class="mt-6 space-y-2">
+                            ${datosGrafico.map(dato => {
+                                const total = datosGrafico.reduce((sum, d) => sum + d.valor, 0);
+                                const porcentaje = (dato.valor / total * 100).toFixed(1);
+                                return `
+                                    <div class="flex justify-between items-center bg-black/30 rounded-xl p-3">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-2xl">${obtenerIconoCategoria(dato.nombre)}</span>
+                                            <span class="text-white font-semibold">${dato.nombre}</span>
+                                            <span class="text-gray-400 text-sm">(${porcentaje}%)</span>
+                                        </div>
+                                        <span class="text-white font-bold">${dato.valor.toFixed(2)}€</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Gráfico de Línea -->
+                <div class="card-neon rounded-2xl p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-6 text-white">📈 Evolución Diaria</h2>
+                    <div style="height: 300px;">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Progreso del Período -->
+                <div class="card-neon rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">📈 Progreso do Período</h3>
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-400">Gastaches o ${stats.porcentajeGastado.toFixed(1)}% dos ingresos</span>
+                            <span class="text-white font-semibold">${stats.totalGastos.toFixed(2)}€ / ${stats.ingresoTotal.toFixed(2)}€</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-4">
+                            <div 
+                                class="h-4 rounded-full transition-all duration-500 ${stats.porcentajeGastado > 80 ? 'bg-red-500' : stats.porcentajeGastado > 50 ? 'bg-yellow-500' : 'bg-green-500'}"
+                                style="width: ${Math.min(stats.porcentajeGastado, 100)}%"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // RENDER VISTA OBXETIVOS
+        // ============================================
+        function renderVistaObxetivos() {
+            const hoy = obtenerFechaActual();
+            
+            return `
+                <div class="card-neon rounded-2xl p-6">
+                    <h2 class="text-2xl font-bold mb-6 text-white">🎯 Obxectivos de Aforro</h2>
+                    
+                    ${state.objetivosAhorro.length > 0 ? `
+                        <div class="space-y-4 mb-6">
+                            ${state.objetivosAhorro.map(objetivo => {
+                                const progreso = (parseFloat(objetivo.montoAhorrado || 0) / parseFloat(objetivo.metaMonto)) * 100;
+                                const fechaLimite = new Date(objetivo.fechaLimite);
+                                const diasRestantes = Math.ceil((fechaLimite - hoy) / (1000 * 60 * 60 * 24));
+                                
+                                return `
+                                    <div class="bg-black/30 rounded-xl p-6">
+                                        <div class="flex justify-between items-start mb-4">
+                                            <div class="flex-1">
+                                                <h3 class="text-white font-bold text-lg mb-1">${objetivo.nombre}</h3>
+                                                <p class="text-gray-400 text-sm">Data límite: ${formatearFecha(objetivo.fechaLimite)} (${diasRestantes} días)</p>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                ${crearGraficoProgreso(objetivo.id)}
+                                                <button 
+                                                    onclick="eliminarObjetivo(${objetivo.id})"
+                                                    class="text-red-500 hover:text-red-400"
+                                                >
+                                                    ❌
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="flex justify-between text-sm mb-2">
+                                                <span class="text-gray-400">Progreso</span>
+                                                <span class="text-white font-semibold">${parseFloat(objetivo.montoAhorrado || 0).toFixed(2)}€ / ${parseFloat(objetivo.metaMonto).toFixed(2)}€</span>
+                                            </div>
+                                            <div class="w-full bg-gray-700 rounded-full h-3">
+                                                <div 
+                                                    class="h-3 rounded-full transition-all duration-500"
+                                                    style="width: ${Math.min(progreso, 100)}%; background: linear-gradient(90deg, #8338EC, #FF006E);"
+                                                ></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex gap-2">
+                                            <input 
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                class="input-neon flex-1 px-4 py-2 rounded-xl text-white"
+                                                placeholder="Engadir aforro"
+                                                id="ahorro-${objetivo.id}"
+                                                inputmode="decimal"
+                                                onkeyup="if(event.key==='Enter') { const monto = parseFloat(this.value || 0); if (monto > 0) { anadirAhorroObjetivo(${objetivo.id}, monto); this.value = ''; }}"
+                                            />
+                                            <button 
+                                                onclick="
+                                                    const input = document.getElementById('ahorro-${objetivo.id}');
+                                                    const monto = parseFloat(input.value || 0);
+                                                    if (monto > 0) {
+                                                        anadirAhorroObjetivo(${objetivo.id}, monto);
+                                                        input.value = '';
+                                                    }
+                                                "
+                                                class="btn-neon bg-green-600 px-6 py-2 rounded-xl font-bold"
+                                            >
+                                                💰
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : '<p class="text-gray-400 text-center py-4 mb-6">Non hai obxectivos de aforro definidos</p>'}
+
+                    <h3 class="text-xl font-bold mb-4 text-white">➕ Novo Obxectivo</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input 
+                            type="text"
+                            id="objetivo-nombre"
+                            class="input-neon px-4 py-3 rounded-xl text-white"
+                            placeholder="Nome do obxectivo"
+                        />
+                        <input 
+                            type="number"
+                            id="objetivo-meta"
+                            step="0.01"
+                            min="0"
+                            class="input-neon px-4 py-3 rounded-xl text-white"
+                            placeholder="Meta (€)"
+                            inputmode="decimal"
+                        />
+                        <input 
+                            type="date"
+                            id="objetivo-fecha"
+                            class="input-neon px-4 py-3 rounded-xl text-white"
+                        />
+                        <button 
+                            onclick="agregarObjetivo()"
+                            class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold"
+                        >
+                            🎯 Crear
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // RENDER VISTA CATEGORÍAS
+        // ============================================
+        function renderVistaCategorias() {
+            return `
+                <div class="card-neon rounded-2xl p-6">
+                    <h2 class="text-2xl font-bold mb-6 text-white">📁 Xestión de Categorías</h2>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                        ${state.categorias.map(categoria => `
+                            <div class="bg-black/30 rounded-xl p-4 flex flex-col items-center gap-2">
+                                <div class="category-icon">
+                                    ${obtenerIconoCategoria(categoria)}
+                                </div>
+                                <span class="text-white font-semibold text-sm text-center">${categoria}</span>
+                                ${state.categorias.length > 1 ? `
+                                    <button 
+                                        onclick="eliminarCategoria('${categoria}')"
+                                        class="text-red-500 hover:text-red-400 text-sm"
+                                    >
+                                        🗑️
+                                    </button>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="flex gap-4">
+                        <input 
+                            type="text"
+                            id="nueva-categoria"
+                            class="input-neon flex-1 px-4 py-3 rounded-xl text-white"
+                            placeholder="Nova categoría"
+                            onkeyup="if(event.key==='Enter') agregarCategoria()"
+                        />
+                        <button 
+                            onclick="agregarCategoria()"
+                            class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold"
+                        >
+                            ➕ Engadir
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        // ============================================
+        // RENDER VISTA AXUSTES
+        // ============================================
+        function renderVistaAxustes(stats) {
+            return `
+                <div class="space-y-6">
+                    <!-- Configuración Básica -->
+                    <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">⚙️ Configuración Básica</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="text-gray-300 block mb-2 font-semibold">💵 Soldo Mensual</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01"
+                                    min="0"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                    value="${state.sueldo}"
+                                    oninput="state.sueldo = this.value; guardarEstadoDebounce();"
+                                    onblur="guardarEstado(); render();"
+                                    placeholder="Ex: 2000"
+                                    inputmode="decimal"
+                                />
+                            </div>
+                            <div>
+                                <label class="text-gray-300 block mb-2 font-semibold">📅 Día de Cobro</label>
+                                <input 
+                                    type="number" 
+                                    min="1" 
+                                    max="31"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                    value="${state.diaCobro}"
+                                    oninput="state.diaCobro = this.value; guardarEstadoDebounce();"
+                                    onblur="guardarEstado(); render();"
+                                    placeholder="Ex: 1"
+                                    inputmode="numeric"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exportar/Importar -->
+                    <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">💾 Xestión de Datos</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button 
+                                onclick="exportarDatosCSV()"
+                                class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-4 rounded-xl font-bold"
+                            >
+                                📊 Exportar CSV
+                            </button>
+                            <button 
+                                onclick="exportarDatosJSON()"
+                                class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 rounded-xl font-bold"
+                            >
+                                💾 Backup JSON
+                            </button>
+                            <button 
+                                onclick="importarDatos()"
+                                class="btn-neon bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 rounded-xl font-bold"
+                            >
+                                📥 Importar
+                            </button>
+                        </div>
+                        
+                        <div class="mt-4 p-4 bg-black/30 rounded-xl">
+                            <p class="text-gray-400 text-sm">
+                                <strong>CSV:</strong> Para Excel/Sheets (só gastos e ingresos)<br>
+                                <strong>JSON:</strong> Backup completo (todos os datos)<br>
+                                <strong>Importar:</strong> Restaura un backup JSON
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Backup Automático -->
+                    <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">🔄 Backup Automático</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-300">Activar backup automático</span>
+                                <button 
+                                    onclick="state.backupConfig.activo = !state.backupConfig.activo; guardarEstado(); render();"
+                                    class="btn-neon px-6 py-2 rounded-xl ${state.backupConfig.activo ? 'bg-green-600' : 'bg-gray-600'}"
+                                >
+                                    ${state.backupConfig.activo ? '✅ Activado' : '❌ Desactivado'}
+                                </button>
+                            </div>
+                            
+                            ${state.backupConfig.activo ? `
+                                <div>
+                                    <label class="text-gray-300 block mb-2">Frecuencia</label>
+                                    <select 
+                                        class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                        value="${state.backupConfig.frecuencia}"
+                                        onchange="state.backupConfig.frecuencia = this.value; guardarEstado();"
+                                    >
+                                        <option value="diario" ${state.backupConfig.frecuencia === 'diario' ? 'selected' : ''}>Diario</option>
+                                        <option value="semanal" ${state.backupConfig.frecuencia === 'semanal' ? 'selected' : ''}>Semanal</option>
+                                        <option value="mensual" ${state.backupConfig.frecuencia === 'mensual' ? 'selected' : ''}>Mensual</option>
+                                    </select>
+                                </div>
+                                
+                                ${state.backupConfig.ultimoBackup ? `
+                                    <p class="text-gray-400 text-sm">
+                                        Último backup: ${formatearFechaHora(state.backupConfig.ultimoBackup)}
+                                    </p>
+                                ` : ''}
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Notificaciones -->
+                    <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">🔔 Notificacións</h2>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-300">Activar notificacións push</span>
+                            <button 
+                                onclick="state.notificacionesActivadas ? (state.notificacionesActivadas = false, guardarEstado(), render()) : solicitarPermisosNotificacion()"
+                                class="btn-neon px-6 py-2 rounded-xl ${state.notificacionesActivadas ? 'bg-green-600' : 'bg-gray-600'}"
+                            >
+                                ${state.notificacionesActivadas ? '✅ Activado' : '❌ Desactivado'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recordatorios -->
+                    <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">🔔 Recordatorios de Pagos</h2>
+                        
+                        ${state.recordatorios.length > 0 ? `
+                            <div class="space-y-2 mb-4">
+                                ${state.recordatorios.map(rec => `
+                                    <div class="bg-black/30 rounded-xl p-3 flex justify-between items-center">
+                                        <div>
+                                            <p class="text-white font-semibold">${rec.descripcion}</p>
+                                            <p class="text-gray-400 text-xs">${formatearFecha(rec.fecha)}</p>
+                                        </div>
+                                        <button 
+                                            onclick="eliminarRecordatorio(${rec.id})"
+                                            class="text-red-500 hover:text-red-400"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p class="text-gray-400 text-center py-4 mb-4">Non hai recordatorios</p>'}
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <input 
+                                type="text"
+                                id="recordatorio-desc"
+                                class="input-neon px-4 py-3 rounded-xl text-white"
+                                placeholder="Descrición"
+                            />
+                            <input 
+                                type="date"
+                                id="recordatorio-fecha"
+                                class="input-neon px-4 py-3 rounded-xl text-white"
+                            />
+                            <button 
+                                onclick="
+                                    const desc = document.getElementById('recordatorio-desc').value;
+                                    const fecha = document.getElementById('recordatorio-fecha').value;
+                                    if (desc && fecha) {
+                                        agregarRecordatorio(desc, fecha);
+                                        document.getElementById('recordatorio-desc').value = '';
+                                        document.getElementById('recordatorio-fecha').value = '';
+                                        render();
+                                    }
+                                "
+                                class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 rounded-xl font-bold"
+                            >
+                                ➕ Engadir
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Modo Ahorro Extremo -->
+                    <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">🔥 Modo Aforro Extremo</h2>
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between bg-black/30 rounded-xl p-4">
+                                <div>
+                                    <p class="font-bold text-white">Activar Modo Aforro Extremo</p>
+                                    <p class="text-sm text-gray-400">Restriccións automáticas en gastos</p>
+                                </div>
+                                <button
+                                    onclick="toggleModoAhorroExtremo()"
+                                    class="btn-neon px-6 py-3 rounded-xl font-bold ${state.modoAhorroExtremo.activo ? 'bg-red-600' : 'bg-gray-600'}"
+                                >
+                                    ${state.modoAhorroExtremo.activo ? '🔥 Activado' : 'Desactivado'}
+                                </button>
+                            </div>
+
+                            <div>
+                                <label class="text-gray-300 block mb-2 font-semibold">Límite de gasto diario (€) - 0 = sen límite</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                    value="${state.modoAhorroExtremo.limiteGastoDiario}"
+                                    oninput="state.modoAhorroExtremo.limiteGastoDiario = parseFloat(this.value) || 0; guardarEstadoDebounce();"
+                                    onblur="guardarEstado();"
+                                    inputmode="decimal"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="text-gray-300 block mb-2 font-semibold">Categorías Esenciais</label>
+                                <div class="space-y-2 mb-3">
+                                    ${state.modoAhorroExtremo.categoriasEsenciales.map(cat => `
+                                        <div class="flex items-center justify-between bg-black/30 rounded-lg p-3">
+                                            <span class="text-white">✅ ${obtenerIconoCategoria(cat)} ${cat}</span>
+                                            <button 
+                                                onclick="eliminarCategoriaEsencial('${cat}')"
+                                                class="text-red-500 hover:text-red-400 text-sm"
+                                            >
+                                                ❌
+                                            </button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                
+                                <select 
+                                    id="categoria-esencial-select"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white mb-2"
+                                >
+                                    <option value="">Selecciona categoría para engadir</option>
+                                    ${state.categorias.filter(cat => !state.modoAhorroExtremo.categoriasEsenciales.includes(cat)).map(cat => `
+                                        <option value="${cat}">${obtenerIconoCategoria(cat)} ${cat}</option>
+                                    `).join('')}
+                                </select>
+                                <button 
+                                    onclick="
+                                        const select = document.getElementById('categoria-esencial-select');
+                                        if (select.value) {
+                                            agregarCategoriaEsencial(select.value);
+                                        }
+                                    "
+                                    class="btn-neon w-full bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3 rounded-xl font-bold"
+                                >
+                                    ➕ Engadir Categoría Esencial
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulador de Fecha -->
+                    <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">📅 Simulador de Data</h2>
+                        <p class="text-gray-400 text-sm mb-4">Para probar escenarios futuros</p>
+                        <div class="flex gap-4">
+                            <input 
+                                type="date"
+                                id="fecha-simulada"
+                                class="input-neon flex-1 px-4 py-3 rounded-xl text-white"
+                                value="${state.fechaSimulada || ''}"
+                            />
+                            <button 
+                                onclick="
+                                    const fecha = document.getElementById('fecha-simulada').value;
+                                    state.fechaSimulada = fecha || null;
+                                    guardarEstado();
+                                    render();
+                                    mostrarToast(fecha ? '📅 Data simulada activada' : '📅 Data real restaurada', 'info');
+                                "
+                                class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 rounded-xl font-bold"
+                            >
+                                ${state.fechaSimulada ? '🔄 Restaurar' : '✅ Aplicar'}
+                            </button>
+                        </div>
+                        ${state.fechaSimulada ? `
+                            <p class="text-yellow-400 text-sm mt-2">⚠️ Modo simulación activo</p>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Renderizar inicialmente
+        render();
+    </script>
+</body>
+</html>
