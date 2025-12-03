@@ -852,6 +852,15 @@
             }
             
             if (monto && monto > 0) {
+                // NOVA VALIDACIÓN MODO AHORRO EXTREMO
+                const validacion = validarGastoModoAhorroExtremo(categoria, monto);
+                
+                if (!validacion.permitido) {
+                    if (!confirm(`${validacion.mensaje}\n\nQueres engadilo igualmente?`)) {
+                        return;
+                    }
+                }
+                
                 const nuevoGasto = {
                     descripcion,
                     monto: monto,
@@ -1087,7 +1096,350 @@
         function mostrarDialogoAhorroObjetivo() {
             // Placeholder para futura implementación
         }
+// ============================================
+        // MODO AHORRO EXTREMO
+        // ============================================
+        if (!state.modoAhorroExtremo) {
+            state.modoAhorroExtremo = {
+                activo: false,
+                categoriasEsenciales: ['Alimentación', 'Salud', 'Transporte', 'Hogar'],
+                limiteGastoDiario: 0
+            };
+        }
 
+        function validarGastoModoAhorroExtremo(categoria, monto) {
+            if (!state.modoAhorroExtremo.activo) return { permitido: true };
+
+            const esEsencial = state.modoAhorroExtremo.categoriasEsenciales.includes(categoria);
+            const stats = calcularEstadisticas();
+            const seHaPasado = stats.gastoPorDiaRestante <= 0;
+
+            if (esEsencial) return { permitido: true };
+
+            if (seHaPasado) {
+                return {
+                    permitido: false,
+                    mensaje: '🚫 MODO AFORRO EXTREMO: Non podes engadir gastos non esenciais.'
+                };
+            }
+
+            if (state.modoAhorroExtremo.limiteGastoDiario > 0) {
+                const hoy = new Date();
+                const gastosHoy = state.gastos.filter(g => {
+                    if (!g || !g.fecha) return false;
+                    return new Date(g.fecha).toDateString() === hoy.toDateString();
+                });
+                const totalGastadoHoy = gastosHoy.reduce((sum, g) => sum + parseFloat(g.monto || 0), 0);
+
+                if (totalGastadoHoy + parseFloat(monto) > state.modoAhorroExtremo.limiteGastoDiario) {
+                    return {
+                        permitido: false,
+                        mensaje: `🚫 Superarías o límite diario de ${state.modoAhorroExtremo.limiteGastoDiario.toFixed(2)}€`
+                    };
+                }
+            }
+
+            return { permitido: true };
+        }
+
+        function toggleModoAhorroExtremo() {
+            state.modoAhorroExtremo.activo = !state.modoAhorroExtremo.activo;
+            guardarEstado();
+            render();
+        }
+
+        function agregarCategoriaEsencial(categoria) {
+            if (!state.modoAhorroExtremo.categoriasEsenciales.includes(categoria)) {
+                state.modoAhorroExtremo.categoriasEsenciales.push(categoria);
+                guardarEstado();
+                render();
+            }
+        }
+
+        function eliminarCategoriaEsencial(categoria) {
+            state.modoAhorroExtremo.categoriasEsenciales = state.modoAhorroExtremo.categoriasEsenciales.filter(c => c !== categoria);
+            guardarEstado();
+            render();
+        }
+
+        // ============================================
+        // NOTIFICACIONES PUSH
+        // ============================================
+        if (!state.notificacionesActivadas) {
+            state.notificacionesActivadas = false;
+        }
+
+        function solicitarPermisosNotificacion() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        state.notificacionesActivadas = true;
+                        guardarEstado();
+                        render();
+                    }
+                });
+            }
+        }
+
+        function enviarNotificacion(titulo, mensaje) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(titulo, {
+                    body: mensaje,
+                    icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E💰%3C/text%3E%3C/svg%3E'
+                });
+            }
+        }
+
+        // ============================================
+        // RECORDATORIOS DE PAGOS
+        // ============================================
+        if (!state.recordatorios) {
+            state.recordatorios = [];
+        }
+
+        function verificarRecordatorios() {
+            const hoy = new Date();
+            
+            state.recordatorios.forEach(rec => {
+                if (!rec.activo) return;
+                
+                const fechaRec = new Date(rec.fecha);
+                
+                if (fechaRec.toDateString() === hoy.toDateString() && !rec.notificado) {
+                    if (state.notificacionesActivadas) {
+                        enviarNotificacion('Recordatorio de pago', rec.descripcion);
+                    }
+                    
+                    rec.notificado = true;
+                    guardarEstado();
+                }
+                
+                if (fechaRec.toDateString() !== hoy.toDateString()) {
+                    rec.notificado = false;
+                }
+            });
+        }
+
+        function agregarRecordatorio(descripcion, fecha) {
+            state.recordatorios.push({
+                id: Date.now(),
+                descripcion,
+                fecha: fecha,
+                activo: true,
+                notificado: false
+            });
+            guardarEstado();
+            render();
+        }
+
+        function eliminarRecordatorio(id) {
+            state.recordatorios = state.recordatorios.filter(r => r.id !== id);
+            guardarEstado();
+            render();
+        }
+
+        // ============================================
+        // BACKUP AUTOMÁTICO
+        // ============================================
+        if (!state.backupConfig) {
+            state.backupConfig = {
+                activo: false,
+                frecuencia: 'semanal',
+                ultimoBackup: null
+            };
+        }
+
+        function exportarDatosCSV() {
+            try {
+                let csv = 'Tipo,Descrición,Monto,Categoría,Conta,Fecha\n';
+                
+                state.gastos.forEach(g => {
+                    const cuenta = state.cuentas.find(c => c.id === g.cuentaId);
+                    csv += `Gasto,"${g.descripcion}",${g.monto},"${g.categoria || ''}","${cuenta?.nombre || ''}",${g.fecha}\n`;
+                });
+                
+                state.ingresos.forEach(i => {
+                    const cuenta = state.cuentas.find(c => c.id === i.cuentaId);
+                    csv += `Ingreso,"${i.descripcion}",${i.monto},,"${cuenta?.nombre || ''}",${i.fecha}\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `cartinos_${fecha}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('✅ Datos exportados a CSV');
+            } catch (error) {
+                alert('❌ Erro ao exportar');
+            }
+        }
+
+        function exportarDatosJSON() {
+            try {
+                const datos = {
+                    version: '1.0',
+                    fecha_exportacion: new Date().toISOString(),
+                    datos: {
+                        sueldo: state.sueldo,
+                        diaCobro: state.diaCobro,
+                        gastosRecurrentes: state.gastosRecurrentes,
+                        gastos: state.gastos,
+                        ingresos: state.ingresos,
+                        ajustes: state.ajustes,
+                        objetivosAhorro: state.objetivosAhorro,
+                        categorias: state.categorias,
+                        cuentas: state.cuentas,
+                        alertasConfig: state.alertasConfig,
+                        modoAhorroExtremo: state.modoAhorroExtremo,
+                        recordatorios: state.recordatorios,
+                        eventosCalendario: state.eventosCalendario
+                    }
+                };
+                
+                const json = JSON.stringify(datos, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `cartinos_backup_${fecha}.json`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('✅ Backup completo creado');
+            } catch (error) {
+                alert('❌ Erro ao crear backup');
+            }
+        }
+
+        function importarDatos() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const datos = JSON.parse(event.target.result);
+                        
+                        if (!datos.version || !datos.datos) {
+                            throw new Error('Formato inválido');
+                        }
+                        
+                        if (confirm('ATENCIÓN: Isto substituirá todos os datos actuais. Seguro?')) {
+                            Object.assign(state, datos.datos);
+                            guardarEstado();
+                            recalcularSaldosCuentas();
+                            render();
+                            alert('✅ Datos importados correctamente');
+                        }
+                    } catch (error) {
+                        alert('❌ Arquivo inválido');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        function verificarBackupAutomatico() {
+            if (!state.backupConfig.activo) return;
+            
+            const ahora = new Date();
+            const ultimo = state.backupConfig.ultimoBackup ? new Date(state.backupConfig.ultimoBackup) : null;
+            
+            let debeHacer = false;
+            
+            if (!ultimo) {
+                debeHacer = true;
+            } else {
+                const dias = Math.floor((ahora - ultimo) / (1000 * 60 * 60 * 24));
+                
+                if (state.backupConfig.frecuencia === 'diario' && dias >= 1) debeHacer = true;
+                else if (state.backupConfig.frecuencia === 'semanal' && dias >= 7) debeHacer = true;
+                else if (state.backupConfig.frecuencia === 'mensual' && dias >= 30) debeHacer = true;
+            }
+            
+            if (debeHacer) {
+                exportarDatosJSON();
+                state.backupConfig.ultimoBackup = ahora.toISOString();
+                guardarEstado();
+            }
+        }
+
+        // ============================================
+        // ANÁLISE DE TENDENCIAS IA
+        // ============================================
+        function analizarTendencias() {
+            const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+            const gastosDelPeriodo = state.gastos.filter(g => {
+                const f = new Date(g.fecha);
+                return f >= inicioPeriodo && f <= finPeriodo;
+            });
+
+            if (gastosDelPeriodo.length === 0) {
+                return { insights: [], recomendaciones: [] };
+            }
+
+            const gastosPorDia = {};
+            gastosDelPeriodo.forEach(g => {
+                const dia = new Date(g.fecha).getDay();
+                gastosPorDia[dia] = (gastosPorDia[dia] || 0) + parseFloat(g.monto);
+            });
+            
+            const diasSemana = ['Domingo', 'Luns', 'Martes', 'Mércores', 'Xoves', 'Venres', 'Sábado'];
+            let diaMayorGasto = 0;
+            let mayorGastoDia = 0;
+            Object.entries(gastosPorDia).forEach(([dia, monto]) => {
+                if (monto > mayorGastoDia) {
+                    mayorGastoDia = monto;
+                    diaMayorGasto = parseInt(dia);
+                }
+            });
+
+            const gastosPorCategoria = {};
+            gastosDelPeriodo.forEach(g => {
+                const cat = g.categoria || 'Outros';
+                gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + parseFloat(g.monto);
+            });
+            
+            let categoriaDominante = null;
+            let mayorGastoCat = 0;
+            Object.entries(gastosPorCategoria).forEach(([cat, monto]) => {
+                if (monto > mayorGastoCat) {
+                    mayorGastoCat = monto;
+                    categoriaDominante = cat;
+                }
+            });
+
+            const insights = [
+                `📅 Os ${diasSemana[diaMayorGasto]} gastas máis: ${mayorGastoDia.toFixed(2)}€`,
+                `📊 A túa categoría dominante é ${categoriaDominante}: ${mayorGastoCat.toFixed(2)}€`,
+                `💰 Media diaria: ${(gastosDelPeriodo.reduce((s, g) => s + parseFloat(g.monto), 0) / gastosDelPeriodo.length).toFixed(2)}€`
+            ];
+
+            const recomendaciones = [
+                `Reduce un 10% en ${categoriaDominante} para aforrar ${(mayorGastoCat * 0.1).toFixed(2)}€`,
+                `Evita os ${diasSemana[diaMayorGasto]} para gastos non esenciais`
+            ];
+
+            return { insights, recomendaciones };
+        }
         function cambiarVista(nuevaVista) {
             // Actualizar clases active en navegación
             document.querySelectorAll('.nav-item').forEach(item => {
@@ -1434,7 +1786,29 @@
                                 </div>
                             ` : '<p class="text-gray-400 text-center py-8">Non hai datos suficientes para mostrar o gráfico</p>'}
                         </div>
-
+<!-- Análise IA -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🤖 Análise Intelixente</h2>
+                            ${(() => {
+                                const analise = analizarTendencias();
+                                return analise.insights.length > 0 ? `
+                                    <div class="space-y-4">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-white mb-2">💡 Insights</h3>
+                                            ${analise.insights.map(i => `
+                                                <p class="text-gray-300 text-sm mb-2">• ${i}</p>
+                                            `).join('')}
+                                        </div>
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-white mb-2">📈 Recomendacións</h3>
+                                            ${analise.recomendaciones.map(r => `
+                                                <p class="text-cyan-400 text-sm mb-2">→ ${r}</p>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : '<p class="text-gray-400">Non hai suficientes datos para analizar</p>';
+                            })()}
+                        </div>
                         <!-- Progreso del Período -->
                         <div class="card-neon rounded-2xl p-6">
                             <h3 class="text-xl font-bold text-white mb-4">📈 Progreso do Período</h3>
@@ -2196,6 +2570,408 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Modo Ahorro Extremo -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🔥 Modo Aforro Extremo</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-300">Activar modo</span>
+                                    <button 
+                                        onclick="toggleModoAhorroExtremo()"
+                                        class="btn-neon px-4 py-2 rounded-xl ${state.modoAhorroExtremo.activo ? 'bg-red-600' : 'bg-gray-600'}"
+                                    >
+                                        ${state.modoAhorroExtremo.activo ? 'ON' : 'OFF'}
+                                    </button>
+                                </div>
+                                
+                                ${state.modoAhorroExtremo.activo ? `
+                                    <div>
+                                        <label class="block text-gray-400 text-sm mb-2">Límite gasto diario (0 = sen límite)</label>
+                                        <input 
+                                            type="number"
+                                            value="${state.modoAhorroExtremo.limiteGastoDiario}"
+                                            onchange="state.modoAhorroExtremo.limiteGastoDiario = parseFloat(this.value); guardarEstado();"
+                                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                            step="0.01"
+                                            min="0"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-gray-400 text-sm mb-2">Categorías esenciais</label>
+                                        <div class="space-y-2 mb-3">
+                                            ${state.modoAhorroExtremo.categoriasEsenciales.map(cat => `
+                                                <div class="bg-black/30 rounded-xl p-2 flex justify-between items-center">
+                                                    <span class="text-white">${cat}</span>
+                                                    <button onclick="eliminarCategoriaEsencial('${cat}')" class="text-red-500">×</button>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        
+                                        <select 
+                                            onchange="if(this.value) { agregarCategoriaEsencial(this.value); this.value = ''; }"
+                                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                        >
+                                            <option value="">Engadir categoría...</option>
+                                            ${state.categorias.filter(c => !state.modoAhorroExtremo.categoriasEsenciales.includes(c)).map(cat => `
+                                                <option value="${cat}">${cat}</option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Exportar/Importar -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">💾 Xestión de Datos</h2>
+                            <div class="space-y-3">
+                                <button 
+                                    onclick="exportarDatosCSV()"
+                                    class="btn-neon w-full bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    📊 Exportar a CSV
+                                </button>
+                                
+                                <button 
+                                    onclick="exportarDatosJSON()"
+                                    class="btn-neon w-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    💾 Crear Backup JSON
+                                </button>
+                                
+                                <button 
+                                    onclick="importarDatos()"
+                                    class="btn-neon w-full bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    📥 Importar Backup
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Notificaciones -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🔔 Notificacións</h2>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-300">Activar notificacións push</span>
+                                <button 
+                                    onclick="
+                                        if (!state.notificacionesActivadas) {
+                                            solicitarPermisosNotificacion();
+                                        } else {
+                                            state.notificacionesActivadas = false;
+                                            guardarEstado();
+                                            render();
+                                        }
+                                    "
+                                    class="btn-neon px-4 py-2 rounded-xl ${state.notificacionesActivadas ? 'bg-green-600' : 'bg-gray-600'}"
+                                >
+                                    ${state.notificacionesActivadas ? 'ON' : 'OFF'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recordatorios -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🔔 Recordatorios de Pagos</h2>
+                            
+                            ${state.recordatorios && state.recordatorios.length > 0 ? `
+                                <div class="space-y-2 mb-4">
+                                    ${state.recordatorios.map(rec => `
+                                        <div class="bg-black/30 rounded-xl p-3 flex justify-between items-center">
+                                            <div>
+                                                <p class="text-white font-semibold">${rec.descripcion}</p>
+                                                <p class="text-gray-400 text-sm">${new Date(rec.fecha).toLocaleDateString('gl-ES')}</p>
+                                            </div>
+                                            <button onclick="eliminarRecordatorio(${rec.id})" class="text-red-500 hover:text-red-400">🗑️</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            <div class="space-y-3">
+                                <input 
+                                    type="text"
+                                    id="recordatorio-desc"
+                                    placeholder="Descrición (ex: Pagar aluguer)"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                />
+                                <input 
+                                    type="date"
+                                    id="recordatorio-fecha"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                />
+                                <button 
+                                    onclick="
+                                        const desc = document.getElementById('recordatorio-desc').value;
+                                        const fecha = document.getElementById('recordatorio-fecha').value;
+                                        if (desc && fecha) {
+                                            agregarRecordatorio(desc, fecha);
+                                            document.getElementById('recordatorio-desc').value = '';
+                                            document.getElementById('recordatorio-fecha').value = '';
+                                        }
+                                    "
+                                    class="btn-neon w-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    ➕ Engadir Recordatorio
+                                </button>
+                            </div>
+                        </div>
+<!-- Modo Ahorro Extremo -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🔥 Modo Aforro Extremo</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-300">Activar modo</span>
+                                    <button 
+                                        onclick="toggleModoAhorroExtremo()"
+                                        class="btn-neon px-4 py-2 rounded-xl ${state.modoAhorroExtremo.activo ? 'bg-red-600' : 'bg-gray-600'}"
+                                    >
+                                        ${state.modoAhorroExtremo.activo ? 'ON' : 'OFF'}
+                                    </button>
+                                </div>
+                                
+                                ${state.modoAhorroExtremo.activo ? `
+                                    <div>
+                                        <label class="block text-gray-400 text-sm mb-2">Límite gasto diario (0 = sen límite)</label>
+                                        <input 
+                                            type="number"
+                                            value="${state.modoAhorroExtremo.limiteGastoDiario}"
+                                            onchange="state.modoAhorroExtremo.limiteGastoDiario = parseFloat(this.value); guardarEstado();"
+                                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                            step="0.01"
+                                            min="0"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-gray-400 text-sm mb-2">Categorías esenciais</label>
+                                        <div class="space-y-2 mb-3">
+                                            ${state.modoAhorroExtremo.categoriasEsenciales.map(cat => `
+                                                <div class="bg-black/30 rounded-xl p-2 flex justify-between items-center">
+                                                    <span class="text-white">${cat}</span>
+                                                    <button onclick="eliminarCategoriaEsencial('${cat}')" class="text-red-500">×</button>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        
+                                        <select 
+                                            onchange="if(this.value) { agregarCategoriaEsencial(this.value); this.value = ''; }"
+                                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                        >
+                                            <option value="">Engadir categoría...</option>
+                                            ${state.categorias.filter(c => !state.modoAhorroExtremo.categoriasEsenciales.includes(c)).map(cat => `
+                                                <option value="${cat}">${cat}</option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Notificaciones -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🔔 Notificacións</h2>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-300">Activar notificacións push</span>
+                                <button 
+                                    onclick="
+                                        if (!state.notificacionesActivadas) {
+                                            solicitarPermisosNotificacion();
+                                        } else {
+                                            state.notificacionesActivadas = false;
+                                            guardarEstado();
+                                            render();
+                                        }
+                                    "
+                                    class="btn-neon px-4 py-2 rounded-xl ${state.notificacionesActivadas ? 'bg-green-600' : 'bg-gray-600'}"
+                                >
+                                    ${state.notificacionesActivadas ? 'ON' : 'OFF'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recordatorios -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🔔 Recordatorios de Pagos</h2>
+                            
+                            ${state.recordatorios && state.recordatorios.length > 0 ? `
+                                <div class="space-y-2 mb-4">
+                                    ${state.recordatorios.map(rec => `
+                                        <div class="bg-black/30 rounded-xl p-3 flex justify-between items-center">
+                                            <div>
+                                                <p class="text-white font-semibold">${rec.descripcion}</p>
+                                                <p class="text-gray-400 text-sm">${new Date(rec.fecha).toLocaleDateString('gl-ES')}</p>
+                                            </div>
+                                            <button onclick="eliminarRecordatorio(${rec.id})" class="text-red-500 hover:text-red-400">🗑️</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            <div class="space-y-3">
+                                <input 
+                                    type="text"
+                                    id="recordatorio-desc"
+                                    placeholder="Descrición (ex: Pagar aluguer)"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                />
+                                <input 
+                                    type="date"
+                                    id="recordatorio-fecha"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                />
+                                <button 
+                                    onclick="
+                                        const desc = document.getElementById('recordatorio-desc').value;
+                                        const fecha = document.getElementById('recordatorio-fecha').value;
+                                        if (desc && fecha) {
+                                            agregarRecordatorio(desc, fecha);
+                                            document.getElementById('recordatorio-desc').value = '';
+                                            document.getElementById('recordatorio-fecha').value = '';
+                                        }
+                                    "
+                                    class="btn-neon w-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    ➕ Engadir Recordatorio
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Backup Automático -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🔄 Backup Automático</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-300">Activar backup automático</span>
+                                    <button 
+                                        onclick="state.backupConfig.activo = !state.backupConfig.activo; guardarEstado(); render();"
+                                        class="btn-neon px-4 py-2 rounded-xl ${state.backupConfig.activo ? 'bg-green-600' : 'bg-gray-600'}"
+                                    >
+                                        ${state.backupConfig.activo ? 'ON' : 'OFF'}
+                                    </button>
+                                </div>
+                                
+                                ${state.backupConfig.activo ? `
+                                    <div>
+                                        <label class="block text-gray-400 text-sm mb-2">Frecuencia</label>
+                                        <select 
+                                            onchange="state.backupConfig.frecuencia = this.value; guardarEstado();"
+                                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                        >
+                                            <option value="diario" ${state.backupConfig.frecuencia === 'diario' ? 'selected' : ''}>Diario</option>
+                                            <option value="semanal" ${state.backupConfig.frecuencia === 'semanal' ? 'selected' : ''}>Semanal</option>
+                                            <option value="mensual" ${state.backupConfig.frecuencia === 'mensual' ? 'selected' : ''}>Mensual</option>
+                                        </select>
+                                    </div>
+                                    
+                                    ${state.backupConfig.ultimoBackup ? `
+                                        <p class="text-gray-400 text-sm">Último backup: ${new Date(state.backupConfig.ultimoBackup).toLocaleDateString('gl-ES')}</p>
+                                    ` : ''}
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Exportar/Importar -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">💾 Xestión de Datos</h2>
+                            <div class="space-y-3">
+                                <button 
+                                    onclick="exportarDatosCSV()"
+                                    class="btn-neon w-full bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    📊 Exportar a CSV
+                                </button>
+                                
+                                <button 
+                                    onclick="exportarDatosJSON()"
+                                    class="btn-neon w-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    💾 Crear Backup JSON
+                                </button>
+                                
+                                <button 
+                                    onclick="importarDatos()"
+                                    class="btn-neon w-full bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    📥 Importar Backup
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Simulador de Fecha -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🕐 Simulador de Data</h2>
+                            <p class="text-gray-400 text-sm mb-4">Proba escenarios futuros sen afectar os teus datos reais</p>
+                            <div class="space-y-3">
+                                <input 
+                                    type="date"
+                                    id="fecha-simulada"
+                                    value="${state.fechaSimulada || ''}"
+                                    class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                />
+                                
+                                <button 
+                                    onclick="
+                                        state.fechaSimulada = document.getElementById('fecha-simulada').value;
+                                        guardarEstado();
+                                        render();
+                                        mostrarToast('📅 Data simulada aplicada');
+                                    "
+                                    class="btn-neon w-full bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 rounded-xl font-bold"
+                                >
+                                    🚀 Aplicar Simulación
+                                </button>
+                                
+                                ${state.fechaSimulada ? `
+                                    <button 
+                                        onclick="
+                                            state.fechaSimulada = null;
+                                            document.getElementById('fecha-simulada').value = '';
+                                            guardarEstado();
+                                            render();
+                                            mostrarToast('✅ Data real restaurada');
+                                        "
+                                        class="btn-neon w-full bg-gradient-to-r from-gray-600 to-gray-700 px-6 py-3 rounded-xl font-bold"
+                                    >
+                                        ♻️ Restaurar Data Real
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <!-- Backup Automático -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">🔄 Backup Automático</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-300">Activar backup automático</span>
+                                    <button 
+                                        onclick="state.backupConfig.activo = !state.backupConfig.activo; guardarEstado(); render();"
+                                        class="btn-neon px-4 py-2 rounded-xl ${state.backupConfig.activo ? 'bg-green-600' : 'bg-gray-600'}"
+                                    >
+                                        ${state.backupConfig.activo ? 'ON' : 'OFF'}
+                                    </button>
+                                </div>
+                                
+                                ${state.backupConfig.activo ? `
+                                    <div>
+                                        <label class="block text-gray-400 text-sm mb-2">Frecuencia</label>
+                                        <select 
+                                            onchange="state.backupConfig.frecuencia = this.value; guardarEstado();"
+                                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                        >
+                                            <option value="diario" ${state.backupConfig.frecuencia === 'diario' ? 'selected' : ''}>Diario</option>
+                                            <option value="semanal" ${state.backupConfig.frecuencia === 'semanal' ? 'selected' : ''}>Semanal</option>
+                                            <option value="mensual" ${state.backupConfig.frecuencia === 'mensual' ? 'selected' : ''}>Mensual</option>
+                                        </select>
+                                    </div>
+                                    
+                                    ${state.backupConfig.ultimoBackup ? `
+                                        <p class="text-gray-400 text-sm">Último backup: ${new Date(state.backupConfig.ultimoBackup).toLocaleDateString('gl-ES')}</p>
+                                    ` : ''}
+                                ` : ''}
+                            </div>
+                        </div>
                     </div>
                 `;
             }
@@ -2255,7 +3031,478 @@
                 }, 100);
             }
         }
+// ============================================
+        // MODO AHORRO EXTREMO
+        // ============================================
+        if (!state.modoAhorroExtremo) {
+            state.modoAhorroExtremo = {
+                activo: false,
+                categoriasEsenciales: ['Alimentación', 'Salud', 'Transporte', 'Hogar'],
+                limiteGastoDiario: 0
+            };
+        }
 
+        function validarGastoModoAhorroExtremo(categoria, monto) {
+            if (!state.modoAhorroExtremo.activo) return { permitido: true };
+
+            const esEsencial = state.modoAhorroExtremo.categoriasEsenciales.includes(categoria);
+            const stats = calcularEstadisticas();
+            const seHaPasado = stats.gastoPorDiaRestante <= 0;
+
+            if (esEsencial) return { permitido: true };
+
+            if (seHaPasado) {
+                return {
+                    permitido: false,
+                    mensaje: '🚫 MODO AFORRO EXTREMO: Non podes engadir gastos non esenciais.'
+                };
+            }
+
+            if (state.modoAhorroExtremo.limiteGastoDiario > 0) {
+                const hoy = new Date();
+                const gastosHoy = state.gastos.filter(g => {
+                    if (!g || !g.fecha) return false;
+                    return new Date(g.fecha).toDateString() === hoy.toDateString();
+                });
+                const totalGastadoHoy = gastosHoy.reduce((sum, g) => sum + parseFloat(g.monto || 0), 0);
+
+                if (totalGastadoHoy + parseFloat(monto) > state.modoAhorroExtremo.limiteGastoDiario) {
+                    return {
+                        permitido: false,
+                        mensaje: `🚫 Superarías o límite diario de ${state.modoAhorroExtremo.limiteGastoDiario.toFixed(2)}€`
+                    };
+                }
+            }
+
+            return { permitido: true };
+        }
+
+        function toggleModoAhorroExtremo() {
+            state.modoAhorroExtremo.activo = !state.modoAhorroExtremo.activo;
+            guardarEstado();
+            render();
+        }
+
+        function agregarCategoriaEsencial(categoria) {
+            if (!state.modoAhorroExtremo.categoriasEsenciales.includes(categoria)) {
+                state.modoAhorroExtremo.categoriasEsenciales.push(categoria);
+                guardarEstado();
+                render();
+            }
+        }
+
+        function eliminarCategoriaEsencial(categoria) {
+            state.modoAhorroExtremo.categoriasEsenciales = state.modoAhorroExtremo.categoriasEsenciales.filter(c => c !== categoria);
+            guardarEstado();
+            render();
+        }
+
+        // ============================================
+        // NOTIFICACIONES PUSH
+        // ============================================
+        if (!state.notificacionesActivadas) {
+            state.notificacionesActivadas = false;
+        }
+
+        function solicitarPermisosNotificacion() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        state.notificacionesActivadas = true;
+                        guardarEstado();
+                        render();
+                    }
+                });
+            }
+        }
+
+        function enviarNotificacion(titulo, mensaje) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(titulo, {
+                    body: mensaje,
+                    icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E💰%3C/text%3E%3C/svg%3E'
+                });
+            }
+        }
+
+        // ============================================
+        // RECORDATORIOS DE PAGOS
+        // ============================================
+        if (!state.recordatorios) {
+            state.recordatorios = [];
+        }
+
+        function verificarRecordatorios() {
+            const hoy = new Date();
+            
+            state.recordatorios.forEach(rec => {
+                if (!rec.activo) return;
+                
+                const fechaRec = new Date(rec.fecha);
+                
+                if (fechaRec.toDateString() === hoy.toDateString() && !rec.notificado) {
+                    if (state.notificacionesActivadas) {
+                        enviarNotificacion('Recordatorio de pago', rec.descripcion);
+                    }
+                    
+                    rec.notificado = true;
+                    guardarEstado();
+                }
+                
+                if (fechaRec.toDateString() !== hoy.toDateString()) {
+                    rec.notificado = false;
+                }
+            });
+        }
+
+        function agregarRecordatorio(descripcion, fecha) {
+            state.recordatorios.push({
+                id: Date.now(),
+                descripcion,
+                fecha: fecha,
+                activo: true,
+                notificado: false
+            });
+            guardarEstado();
+            render();
+        }
+
+        function eliminarRecordatorio(id) {
+            state.recordatorios = state.recordatorios.filter(r => r.id !== id);
+            guardarEstado();
+            render();
+        }
+
+        // ============================================
+        // BACKUP AUTOMÁTICO
+        // ============================================
+        if (!state.backupConfig) {
+            state.backupConfig = {
+                activo: false,
+                frecuencia: 'semanal',
+                ultimoBackup: null
+            };
+        }
+
+        function exportarDatosCSV() {
+            try {
+                let csv = 'Tipo,Descrición,Monto,Categoría,Conta,Fecha\n';
+                
+                state.gastos.forEach(g => {
+                    const cuenta = state.cuentas.find(c => c.id === g.cuentaId);
+                    csv += `Gasto,"${g.descripcion}",${g.monto},"${g.categoria || ''}","${cuenta?.nombre || ''}",${g.fecha}\n`;
+                });
+                
+                state.ingresos.forEach(i => {
+                    const cuenta = state.cuentas.find(c => c.id === i.cuentaId);
+                    csv += `Ingreso,"${i.descripcion}",${i.monto},,"${cuenta?.nombre || ''}",${i.fecha}\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `cartinos_${fecha}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                mostrarToast('✅ Datos exportados a CSV');
+            } catch (error) {
+                mostrarToast('❌ Erro ao exportar');
+            }
+        }
+
+        function exportarDatosJSON() {
+            try {
+                const datos = {
+                    version: '1.0',
+                    fecha_exportacion: new Date().toISOString(),
+                    datos: {
+                        sueldo: state.sueldo,
+                        diaCobro: state.diaCobro,
+                        gastosRecurrentes: state.gastosRecurrentes,
+                        gastos: state.gastos,
+                        ingresos: state.ingresos,
+                        ajustes: state.ajustes,
+                        objetivosAhorro: state.objetivosAhorro,
+                        categorias: state.categorias,
+                        cuentas: state.cuentas,
+                        alertasConfig: state.alertasConfig,
+                        modoAhorroExtremo: state.modoAhorroExtremo,
+                        recordatorios: state.recordatorios,
+                        eventosCalendario: state.eventosCalendario
+                    }
+                };
+                
+                const json = JSON.stringify(datos, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `cartinos_backup_${fecha}.json`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                mostrarToast('✅ Backup completo creado');
+            } catch (error) {
+                mostrarToast('❌ Erro ao crear backup');
+            }
+        }
+
+        function importarDatos() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const datos = JSON.parse(event.target.result);
+                        
+                        if (!datos.version || !datos.datos) {
+                            throw new Error('Formato inválido');
+                        }
+                        
+                        if (confirm('ATENCIÓN: Isto substituirá todos os datos actuais. Seguro?')) {
+                            Object.assign(state, datos.datos);
+                            guardarEstado();
+                            recalcularSaldosCuentas();
+                            render();
+                            mostrarToast('✅ Datos importados correctamente');
+                        }
+                    } catch (error) {
+                        mostrarToast('❌ Arquivo inválido');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        function verificarBackupAutomatico() {
+            if (!state.backupConfig.activo) return;
+            
+            const ahora = new Date();
+            const ultimo = state.backupConfig.ultimoBackup ? new Date(state.backupConfig.ultimoBackup) : null;
+            
+            let debeHacer = false;
+            
+            if (!ultimo) {
+                debeHacer = true;
+            } else {
+                const dias = Math.floor((ahora - ultimo) / (1000 * 60 * 60 * 24));
+                
+                if (state.backupConfig.frecuencia === 'diario' && dias >= 1) debeHacer = true;
+                else if (state.backupConfig.frecuencia === 'semanal' && dias >= 7) debeHacer = true;
+                else if (state.backupConfig.frecuencia === 'mensual' && dias >= 30) debeHacer = true;
+            }
+            
+            if (debeHacer) {
+                exportarDatosJSON();
+                state.backupConfig.ultimoBackup = ahora.toISOString();
+                guardarEstado();
+            }
+        }
+
+        // ============================================
+        // ANÁLISE DE TENDENCIAS IA
+        // ============================================
+        function analizarTendencias() {
+            const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+            const gastosDelPeriodo = state.gastos.filter(g => {
+                const f = new Date(g.fecha);
+                return f >= inicioPeriodo && f <= finPeriodo;
+            });
+
+            if (gastosDelPeriodo.length === 0) {
+                return { insights: [], recomendaciones: [] };
+            }
+
+            // Día con máis gasto
+            const gastosPorDia = {};
+            gastosDelPeriodo.forEach(g => {
+                const dia = new Date(g.fecha).getDay();
+                gastosPorDia[dia] = (gastosPorDia[dia] || 0) + parseFloat(g.monto);
+            });
+            
+            const diasSemana = ['Domingo', 'Luns', 'Martes', 'Mércores', 'Xoves', 'Venres', 'Sábado'];
+            let diaMayorGasto = 0;
+            let mayorGastoDia = 0;
+            Object.entries(gastosPorDia).forEach(([dia, monto]) => {
+                if (monto > mayorGastoDia) {
+                    mayorGastoDia = monto;
+                    diaMayorGasto = parseInt(dia);
+                }
+            });
+
+            // Categoría dominante
+            const gastosPorCategoria = {};
+            gastosDelPeriodo.forEach(g => {
+                const cat = g.categoria || 'Outros';
+                gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + parseFloat(g.monto);
+            });
+            
+            let categoriaDominante = null;
+            let mayorGastoCat = 0;
+            Object.entries(gastosPorCategoria).forEach(([cat, monto]) => {
+                if (monto > mayorGastoCat) {
+                    mayorGastoCat = monto;
+                    categoriaDominante = cat;
+                }
+            });
+
+            const insights = [
+                `📅 Os ${diasSemana[diaMayorGasto]} gastas máis: ${mayorGastoDia.toFixed(2)}€`,
+                `📊 A túa categoría dominante é ${categoriaDominante}: ${mayorGastoCat.toFixed(2)}€`,
+                `💰 Media diaria: ${(gastosDelPeriodo.reduce((s, g) => s + parseFloat(g.monto), 0) / gastosDelPeriodo.length).toFixed(2)}€`
+            ];
+
+            const recomendaciones = [
+                `Reduce un 10% en ${categoriaDominante} para aforrar ${(mayorGastoCat * 0.1).toFixed(2)}€`,
+                `Evita os ${diasSemana[diaMayorGasto]} para gastos non esenciais`
+            ];
+
+            return { insights, recomendaciones };
+        }
+
+        // ============================================
+        // SWIPE TO DELETE
+        // ============================================
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let swipeElement = null;
+
+        function iniciarSwipe(event, id, tipo) {
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+            swipeElement = event.currentTarget;
+        }
+
+        function moverSwipe(event) {
+            if (!swipeElement) return;
+            
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
+            const diffX = touchStartX - touchX;
+            const diffY = Math.abs(touchStartY - touchY);
+            
+            if (diffY < 30 && diffX > 0) {
+                const translateX = Math.min(diffX, 80);
+                swipeElement.style.transform = `translateX(-${translateX}px)`;
+                
+                const deleteBtn = swipeElement.querySelector('.swipe-delete');
+                if (deleteBtn) {
+                    deleteBtn.style.opacity = translateX / 80;
+                }
+            }
+        }
+
+        function finalizarSwipe(event, id, tipo) {
+            if (!swipeElement) return;
+            
+            const touchX = event.changedTouches[0].clientX;
+            const diffX = touchStartX - touchX;
+            
+            if (diffX > 80) {
+                swipeElement.style.transform = 'translateX(-100%)';
+                swipeElement.style.opacity = '0';
+                
+                setTimeout(() => {
+                    if (tipo === 'gasto') eliminarGasto(id);
+                    else if (tipo === 'ingreso') eliminarIngreso(id);
+                }, 300);
+            } else {
+                swipeElement.style.transform = 'translateX(0)';
+                const deleteBtn = swipeElement.querySelector('.swipe-delete');
+                if (deleteBtn) deleteBtn.style.opacity = '0';
+            }
+            
+            swipeElement = null;
+        }
+
+        // ============================================
+        // SIMULADOR DE FECHA
+        // ============================================
+        if (!state.fechaSimulada) {
+            state.fechaSimulada = null;
+        }
+
+        function obtenerFechaActual() {
+            return state.fechaSimulada ? new Date(state.fechaSimulada) : new Date();
+        }
+
+        // ============================================
+        // TOAST NOTIFICATIONS
+        // ============================================
+        function mostrarToast(mensaje, tipo = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = mensaje;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'none';
+                setTimeout(() => toast.remove(), 100);
+            }, 3000);
+        }
+
+        // MODIFICAR agregarGasto() para incluir validación modo ahorro
+        const agregarGastoOriginal = agregarGasto;
+        agregarGasto = function() {
+            const textoInput = document.getElementById('gasto-texto');
+            const texto = textoInput ? textoInput.value : '';
+            const montoManual = document.getElementById('gasto-monto') ? document.getElementById('gasto-monto').value : '';
+            const categoriaManual = document.getElementById('gasto-categoria') ? document.getElementById('gasto-categoria').value : '';
+            
+            let descripcion, monto, categoria;
+            
+            if (texto) {
+                const parseado = parsearTextoInteligente(texto);
+                descripcion = parseado.descripcion;
+                monto = parseado.monto || (montoManual ? parseFloat(montoManual) : null);
+                categoria = parseado.categoria;
+            } else {
+                descripcion = 'Gasto';
+                monto = montoManual ? parseFloat(montoManual) : null;
+                categoria = categoriaManual;
+            }
+            
+            if (monto && monto > 0) {
+                // Validar modo ahorro extremo
+                const validacion = validarGastoModoAhorroExtremo(categoria, monto);
+                
+                if (!validacion.permitido) {
+                    if (!confirm(`${validacion.mensaje}\n\nQueres engadilo igualmente?`)) {
+                        return;
+                    }
+                }
+                
+                // Continuar con el código original
+                agregarGastoOriginal();
+            }
+        };
+
+        // Inicializar en el setTimeout inicial
+        setTimeout(() => {
+            verificarRecordatorios();
+            if (state.backupConfig && state.backupConfig.activo) {
+                verificarBackupAutomatico();
+            }
+        }, 100);
         // Renderizar la aplicación inicialmente
         render();
     </script>
