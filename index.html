@@ -258,65 +258,6 @@
         .icon-target { stroke: url(#gradient-orange); }
         .icon-calendar { stroke: url(#gradient-red); }
         .icon-settings { stroke: url(#gradient-cyan); }
-        /* TOASTS */
-        .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: linear-gradient(135deg, #8338EC, #FF006E);
-            color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            font-weight: bold;
-            z-index: 10000;
-            box-shadow: 0 4px 20px rgba(131, 56, 236, 0.5);
-            opacity: 0;
-            transition: all 0.3s ease;
-            max-width: 90%;
-            text-align: center;
-        }
-        
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-        
-        .toast.success {
-            background: linear-gradient(135deg, #06FFA5, #00D4FF);
-        }
-        
-        .toast.error {
-            background: linear-gradient(135deg, #FF006E, #FF4D4D);
-        }
-        
-        .toast.warning {
-            background: linear-gradient(135deg, #FFBE0B, #FF6B35);
-        }
-        /* Animación de vistas */
-        #app > div {
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        /* Animación botón deshacer */
-        #btn-deshacer:hover {
-            transform: scale(1.1) rotate(-15deg);
-            box-shadow: 0 6px 20px rgba(131, 56, 236, 0.7);
-        }
-
-        #btn-deshacer:active {
-            transform: scale(0.95);
-        }
     </style>
 </head>
 <body class="text-white">
@@ -425,71 +366,27 @@
                             <path d="M12 1v6m0 6v6m5.66-13.66l-4.24 4.24M10.59 13.41l-4.24 4.24M23 12h-6m-6 0H1m18.66 5.66l-4.24-4.24M10.59 10.59l-4.24-4.24"></path>
                         </svg>
                     </div>
-                   <div class="nav-label">Axustes</div>
+                    <div class="nav-label">Axustes</div>
                 </div>
             </div>
         </div>
-
- <!-- Botón Flotante DESHACER -->
-    <button onclick="deshacer()"
-        id="btn-deshacer"
-        style="
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #FF006E, #8338EC);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 15px rgba(131, 56, 236, 0.5);
-            font-size: 28px;
-            cursor: pointer;
-            z-index: 9999;
-            transition: all 0.3s ease;
-            display: none;
-        "
-        title="Desfacer última acción"
-    >
-        ↩️
-    </button>
-
     <script>
       // Estado global (TODO O TEU CÓDIGO)
-          let state = {
+        let state = {
             diaCobro: localStorage.getItem('diaCobro') || '',
             gastosRecurrentes: JSON.parse(localStorage.getItem('gastosRecurrentes') || '[]'),
             gastos: JSON.parse(localStorage.getItem('gastos') || '[]'),
             ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
             ajustes: JSON.parse(localStorage.getItem('ajustes') || '[]'),
-            transferencias: JSON.parse(localStorage.getItem('transferencias') || '[]'),
             objetivosAhorro: JSON.parse(localStorage.getItem('objetivosAhorro') || '[]'),
             categorias: JSON.parse(localStorage.getItem('categorias') || '["Alimentación", "Transporte", "Entretenimiento", "Salud", "Hogar", "Ropa", "Outros"]'),
             cuentas: JSON.parse(localStorage.getItem('cuentas') || '[{"id": 1, "nombre": "Conta Principal", "tipo": "banco", "saldoInicial": 0, "saldo": 0}]'),
             alertasConfig: JSON.parse(localStorage.getItem('alertasConfig') || '{"diasParaCobro": 3, "porcentajeGastoMitadMes": 50, "alertaObjetivosEnRiesgo": true}'),
-            sueldoConfirmadoPeriodoActual: localStorage.getItem('sueldoConfirmadoPeriodoActual') || '',
-            historialAcciones: [],
-            maxHistorial: 10,
             vista: 'principal',
             alertasMostradas: [],
             ultimaActualizacionRecurrentes: localStorage.getItem('ultimaActualizacionRecurrentes') || '',
             editando: null,
-            eventosCalendario: JSON.parse(localStorage.getItem('eventosCalendario') || '[]'),
-            // Nuevas propiedades añadidas
-            fechaSimulada: null,
-            modoAhorroExtremo: {
-                activo: false,
-                categoriasEsenciales: ['Alimentación', 'Salud', 'Transporte', 'Hogar'],
-                limiteGastoDiario: 0
-            },
-            notificacionesActivadas: false,
-            recordatorios: [],
-            backupConfig: {
-                activo: false,
-                frecuencia: 'semanal',
-                ultimoBackup: null
-            }
+            eventosCalendario: JSON.parse(localStorage.getItem('eventosCalendario') || '[]')
         };
 
         let saveTimeout = null;
@@ -544,13 +441,11 @@
             localStorage.setItem('gastos', JSON.stringify(state.gastos));
             localStorage.setItem('ingresos', JSON.stringify(state.ingresos));
             localStorage.setItem('ajustes', JSON.stringify(state.ajustes));
-            localStorage.setItem('transferencias', JSON.stringify(state.transferencias));
             localStorage.setItem('objetivosAhorro', JSON.stringify(state.objetivosAhorro));
             localStorage.setItem('categorias', JSON.stringify(state.categorias));
             localStorage.setItem('cuentas', JSON.stringify(state.cuentas));
             localStorage.setItem('alertasConfig', JSON.stringify(state.alertasConfig));
             localStorage.setItem('ultimaActualizacionRecurrentes', state.ultimaActualizacionRecurrentes);
-            localStorage.setItem('sueldoConfirmadoPeriodoActual', state.sueldoConfirmadoPeriodoActual);
             localStorage.setItem('eventosCalendario', JSON.stringify(state.eventosCalendario));
         }
 
@@ -638,7 +533,7 @@
             return { inicioPeriodo, finPeriodo };
         }
 
-       function calcularSaldoCuenta(cuentaId) {
+        function calcularSaldoCuenta(cuentaId) {
             const cuenta = state.cuentas.find(c => c.id === cuentaId);
             if (!cuenta) return 0;
             
@@ -658,18 +553,6 @@
                     saldo += (a.tipo === 'positivo' ? monto : -monto);
                 }
             });
-            
-            // NOVO: Procesar transferencias
-            if (state.transferencias) {
-                state.transferencias.forEach(t => {
-                    if (t.origenId === cuentaId) {
-                        saldo -= parseFloat(t.monto);  // Resta se é orixe
-                    }
-                    if (t.destinoId === cuentaId) {
-                        saldo += parseFloat(t.monto);  // Suma se é destino
-                    }
-                });
-            }
             
             return saldo;
         }
@@ -701,14 +584,13 @@
             state.ultimaActualizacionRecurrentes = inicioPeriodoStr;
             recalcularSaldosCuentas();
             guardarEstado();
-            
             // Confirmar sueldo ao inicio do período
             if (!state.sueldoConfirmadoPeriodoActual) {
-                state.sueldoConfirmadoPeriodoActual = inicioPeriodoStr;
+                state.sueldoConfirmadoPeriodoActual = periodoKey;
             }
             
-            if (state.sueldoConfirmadoPeriodoActual !== inicioPeriodoStr) {
-                state.sueldoConfirmadoPeriodoActual = inicioPeriodoStr;
+            if (state.sueldoConfirmadoPeriodoActual !== periodoKey) {
+                state.sueldoConfirmadoPeriodoActual = periodoKey;
                 
                 setTimeout(() => {
                     const sueldo = prompt('💵 Canto cobraches este mes?');
@@ -728,6 +610,7 @@
                 }, 500);
             }
         }
+
         // TODO O TEU CÓDIGO DE ESTADÍSTICAS
         function calcularEstadisticas() {
             const hoy = new Date();
@@ -1128,8 +1011,7 @@
                     id: Date.now()
                 };
                 
-              state.gastos.push(nuevoGasto);
-                guardarAccion('agregarGasto', nuevoGasto);
+                state.gastos.push(nuevoGasto);
                 recalcularSaldosCuentas();
                 
                 if (document.getElementById('gasto-monto')) {
@@ -1139,27 +1021,21 @@
                 guardarEstado();
                 verificarAlertas();
                 
-                mostrarToast(`✅ Gasto de ${monto.toFixed(2)}€ engadido`, 'success');
-                
                 const stats = calcularEstadisticas();
                 if (stats.gastoPorDiaRestante > 0 && state.objetivosAhorro.length > 0) {
                     mostrarDialogoAhorroObjetivo();
                 }
                 
                 render();
-            } else {
-                mostrarToast('❌ Introduce un monto válido', 'error');
             }
         }
 
-      function eliminarGasto(id) {
+        function eliminarGasto(id) {
             const gasto = state.gastos.find(g => g.id === id);
-            if (gasto && confirm(`🗑️ Seguro que queres eliminar o gasto de ${gasto.monto.toFixed(2)}€ (${gasto.descripcion})?`)) {
-                guardarAccion('eliminarGasto', gasto);
+            if (gasto) {
                 state.gastos = state.gastos.filter(g => g.id !== id);
                 recalcularSaldosCuentas();
                 guardarEstado();
-                mostrarToast('✅ Gasto eliminado', 'success');
                 render();
             }
         }
@@ -1172,72 +1048,61 @@
             }
         }
 
-     function guardarEdicionGasto(id) {
-    const gasto = state.gastos.find(g => g.id === id);
-    if (gasto) {
-        guardarAccion('editarGasto', {
-            id: id,
-            estadoAnterior: {...gasto}
-        });
-        
-        gasto.descripcion = document.getElementById(`edit-desc-${id}`).value;
-        gasto.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
-        gasto.categoria = document.getElementById(`edit-cat-${id}`).value;
-        gasto.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
-        
-        const fechaInput = document.getElementById(`edit-fecha-${id}`);
-        if (fechaInput) {
-            gasto.fecha = new Date(fechaInput.value).toISOString();
+      function guardarEdicionGasto(id) {
+            const gasto = state.gastos.find(g => g.id === id);
+            if (gasto) {
+                gasto.descripcion = document.getElementById(`edit-desc-${id}`).value;
+                gasto.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
+                gasto.categoria = document.getElementById(`edit-cat-${id}`).value;
+                gasto.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
+                
+                const fechaInput = document.getElementById(`edit-fecha-${id}`);
+                if (fechaInput) {
+                    gasto.fecha = new Date(fechaInput.value).toISOString();
+                }
+                
+                state.editando = null;
+                recalcularSaldosCuentas();
+                guardarEstado();
+                render();
+            }
         }
-        
-        state.editando = null;
-        recalcularSaldosCuentas();
-        guardarEstado();
-        mostrarToast('✅ Gasto actualizado', 'success');
-        render();
-    }
-}
 
         function cancelarEdicion() {
             state.editando = null;
             render();
         }
 
-      function agregarIngreso() {
-    const descripcion = document.getElementById('ingreso-descripcion').value || 'Ingreso';
-    const monto = document.getElementById('ingreso-monto').value;
-    const cuentaId = parseInt(document.getElementById('ingreso-cuenta').value);
-    
-    if (monto && parseFloat(monto) > 0) {
-        state.ingresos.push({
-            descripcion,
-            monto: parseFloat(monto),
-            cuentaId,
-            fecha: new Date().toISOString(),
-            id: Date.now()            
-        });
-        guardarAccion('agregarIngreso', state.ingresos[state.ingresos.length - 1]);
-     
-        recalcularSaldosCuentas();
-        
-        document.getElementById('ingreso-descripcion').value = '';
-        document.getElementById('ingreso-monto').value = '';
-        
-        guardarEstado();
-        mostrarToast(`✅ Ingreso de ${parseFloat(monto).toFixed(2)}€ engadido`, 'success');
-        render();
-    } else {
-        mostrarToast('❌ Introduce un monto válido', 'error');
-    }
-}
-      function eliminarIngreso(id) {
+        function agregarIngreso() {
+            const descripcion = document.getElementById('ingreso-descripcion').value || 'Ingreso';
+            const monto = document.getElementById('ingreso-monto').value;
+            const cuentaId = parseInt(document.getElementById('ingreso-cuenta').value);
+            
+            if (monto && parseFloat(monto) > 0) {
+                state.ingresos.push({
+                    descripcion,
+                    monto: parseFloat(monto),
+                    cuentaId,
+                    fecha: new Date().toISOString(),
+                    id: Date.now()
+                });
+                
+                recalcularSaldosCuentas();
+                
+                document.getElementById('ingreso-descripcion').value = '';
+                document.getElementById('ingreso-monto').value = '';
+                
+                guardarEstado();
+                render();
+            }
+        }
+
+        function eliminarIngreso(id) {
             const ingreso = state.ingresos.find(i => i.id === id);
-            if (ingreso && confirm(`🗑️ Seguro que queres eliminar o ingreso de ${ingreso.monto.toFixed(2)}€ (${ingreso.descripcion})?`)) {
+            if (ingreso) {
                 state.ingresos = state.ingresos.filter(i => i.id !== id);
-                guardarAccion('eliminarIngreso', ingreso);
                 recalcularSaldosCuentas();
                 guardarEstado();
-                mostrarToast('✅ Ingreso eliminado', 'success');
                 render();
             }
         }
@@ -1250,30 +1115,25 @@
             }
         }
 
-    function guardarEdicionIngreso(id) {
-    const ingreso = state.ingresos.find(i => i.id === id);
-    if (ingreso) {
-        guardarAccion('editarIngreso', {
-            id: id,
-            estadoAnterior: {...ingreso}
-        });
-        
-        ingreso.descripcion = document.getElementById(`edit-desc-${id}`).value;
-        ingreso.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
-        ingreso.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
-        
-        const fechaInput = document.getElementById(`edit-fecha-${id}`);
-        if (fechaInput) {
-            ingreso.fecha = new Date(fechaInput.value).toISOString();
+        function guardarEdicionIngreso(id) {
+            const ingreso = state.ingresos.find(i => i.id === id);
+            if (ingreso) {
+                ingreso.descripcion = document.getElementById(`edit-desc-${id}`).value;
+                ingreso.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
+                ingreso.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
+                
+                const fechaInput = document.getElementById(`edit-fecha-${id}`);
+                if (fechaInput) {
+                    ingreso.fecha = new Date(fechaInput.value).toISOString();
+                }
+                
+                state.editando = null;
+                recalcularSaldosCuentas();
+                guardarEstado();
+                render();
+            }
         }
-        
-        state.editando = null;
-        recalcularSaldosCuentas();
-        guardarEstado();
-        mostrarToast('✅ Ingreso actualizado', 'success');
-        render();
-    }
-}
+
         function editarGastoRecurrente(id) {
             const gasto = state.gastosRecurrentes.find(g => g.id === id);
             if (gasto) {
@@ -1380,52 +1240,7 @@
                 render();
             }
         }
-function realizarTransferencia() {
-            const origenId = parseInt(document.getElementById('trans-origen').value);
-            const destinoId = parseInt(document.getElementById('trans-destino').value);
-            const monto = parseFloat(document.getElementById('trans-monto').value);
-            const descripcion = document.getElementById('trans-descripcion').value;
-            
-            if (!origenId || !destinoId || !monto || monto <= 0) {
-                alert('❌ Completa todos os campos obrigatorios');
-                return;
-            }
-            
-            if (origenId === destinoId) {
-                alert('❌ Orixe e destino non poden ser a mesma conta');
-                return;
-            }
-            
-            const cuentaOrigen = state.cuentas.find(c => c.id === origenId);
-            if (cuentaOrigen.saldo < monto) {
-                if (!confirm(`⚠️ A conta ${cuentaOrigen.nombre} ten ${cuentaOrigen.saldo.toFixed(2)}€. Queres continuar igualmente?`)) {
-                    return;
-                }
-            }
-            
-            if (!state.transferencias) state.transferencias = [];
-            
-            state.transferencias.push({
-                origenId,
-                destinoId,
-                monto,
-                descripcion: descripcion || '',
-                fecha: new Date().toISOString(),
-                id: Date.now()
-            });
-    guardarAccion('agregarTransferencia', state.transferencias[state.transferencias.length - 1]);
-            
-            document.getElementById('trans-origen').value = '';
-            document.getElementById('trans-destino').value = '';
-            document.getElementById('trans-monto').value = '';
-            document.getElementById('trans-descripcion').value = '';
-            
-            recalcularSaldosCuentas();
-            guardarEstado();
-            mostrarToast(`✅ Transferencia de ${monto.toFixed(2)}€ realizada`, 'success');
-            render();
-        }
-        function editarCuenta(id) {
+function editarCuenta(id) {
             state.editando = { tipo: 'cuenta', id: id };
             render();
         }
@@ -1472,27 +1287,8 @@ function realizarTransferencia() {
             }
         }
 
-                function mostrarDialogoAhorroObjetivo() {
-            const stats = calcularEstadisticas();
-            if (stats.ahorroDiarioNecesario > 0) {
-                if (confirm(`💡 Intenta aforrar ${stats.ahorroDiarioNecesario.toFixed(2)}€ hoxe para os teus obxectivos. ¿Queres engadir este aforro?`)) {
-                    // Distribuir aforro entre obxectivos
-                    const objetivosActivos = state.objetivosAhorro.filter(o => o.activo !== false);
-                    if (objetivosActivos.length > 0) {
-                        const ahorroPorObjetivo = stats.ahorroDiarioNecesario / objetivosActivos.length;
-                        
-                        objetivosActivos.forEach(objetivo => {
-                            objetivo.montoAhorrado = parseFloat(objetivo.montoAhorrado || 0) + ahorroPorObjetivo;
-                        });
-                        
-                        guardarEstado();
-                        render();
-                        mostrarToast(`✅ Aforro de ${stats.ahorroDiarioNecesario.toFixed(2)}€ distribuído entre obxectivos`, 'success');
-                    }
-                }
-            }
-        } 
-        // Placeholder para futura implementación
+        function mostrarDialogoAhorroObjetivo() {
+            // Placeholder para futura implementación
         }
 // ============================================
         // MODO AHORRO EXTREMO
@@ -1545,6 +1341,7 @@ function realizarTransferencia() {
             guardarEstado();
             render();
         }
+
         function agregarCategoriaEsencial(categoria) {
             if (!state.modoAhorroExtremo.categoriasEsenciales.includes(categoria)) {
                 state.modoAhorroExtremo.categoriasEsenciales.push(categoria);
@@ -1558,361 +1355,285 @@ function realizarTransferencia() {
             guardarEstado();
             render();
         }
-        
-        ============================================
-// GRUPO 6 - PLANIFICACIÓN LARGA
-// ============================================
 
-function proyectarALargoPlazo(meses, escenario = {}) {
-    const stats = calcularEstadisticas();
-    const proyeccion = {
-        meses: [],
-        totalAhorrado: 0,
-        objetivosAlcanzados: []
-    };
-    
-    const ingresoMensual = escenario.ingresoMensual || stats.ingresoTotal || 0;
-    const gastoRecurrenteMensual = escenario.gastoRecurrente || stats.totalGastosRecurrentes || 0;
-    const gastoVariableMensual = escenario.gastoVariable || stats.totalGastosVariables || 0;
-    const ahorroMensualObjetivos = escenario.ahorroObjetivos || stats.ahorroDiarioNecesario * 30 || 0;
-    
-    let saldoAcumulado = stats.disponibleTotal;
-    
-    for (let i = 1; i <= meses; i++) {
-        const ingresoMes = ingresoMensual;
-        const gastoMes = gastoRecurrenteMensual + gastoVariableMensual;
-        const ahorroMes = Math.min(ahorroMensualObjetivos, ingresoMes - gastoMes);
-        const disponibleFinMes = saldoAcumulado + ingresoMes - gastoMes - ahorroMes;
-        
-        saldoAcumulado = disponibleFinMes;
-        proyeccion.totalAhorrado += ahorroMes;
-        
-        proyeccion.meses.push({
-            mes: i,
-            ingreso: ingresoMes,
-            gastos: gastoMes,
-            ahorro: ahorroMes,
-            disponible: disponibleFinMes,
-            ahorroAcumulado: proyeccion.totalAhorrado
-        });
-    }
-    
-    state.objetivosAhorro.forEach(obj => {
-        const montoRestante = parseFloat(obj.metaMonto) - parseFloat(obj.montoAhorrado || 0);
-        const mesesNecesarios = ahorroMensualObjetivos > 0 ? Math.ceil(montoRestante / ahorroMensualObjetivos) : Infinity;
-        
-        if (mesesNecesarios <= meses) {
-            proyeccion.objetivosAlcanzados.push({
-                nombre: obj.nombre,
-                mesesNecesarios: mesesNecesarios,
-                monto: obj.metaMonto
+        // ============================================
+        // NOTIFICACIONES PUSH
+        // ============================================
+        if (!state.notificacionesActivadas) {
+            state.notificacionesActivadas = false;
+        }
+
+        function solicitarPermisosNotificacion() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        state.notificacionesActivadas = true;
+                        guardarEstado();
+                        render();
+                    }
+                });
+            }
+        }
+
+        function enviarNotificacion(titulo, mensaje) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(titulo, {
+                    body: mensaje,
+                    icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E💰%3C/text%3E%3C/svg%3E'
+                });
+            }
+        }
+
+        // ============================================
+        // RECORDATORIOS DE PAGOS
+        // ============================================
+        if (!state.recordatorios) {
+            state.recordatorios = [];
+        }
+
+        function verificarRecordatorios() {
+            const hoy = new Date();
+            
+            state.recordatorios.forEach(rec => {
+                if (!rec.activo) return;
+                
+                const fechaRec = new Date(rec.fecha);
+                
+                if (fechaRec.toDateString() === hoy.toDateString() && !rec.notificado) {
+                    if (state.notificacionesActivadas) {
+                        enviarNotificacion('Recordatorio de pago', rec.descripcion);
+                    }
+                    
+                    rec.notificado = true;
+                    guardarEstado();
+                }
+                
+                if (fechaRec.toDateString() !== hoy.toDateString()) {
+                    rec.notificado = false;
+                }
             });
         }
-    });
-    
-    return proyeccion;
-}
 
-function simularEscenario(cambios) {
-    const stats = calcularEstadisticas();
-    
-    const escenario = {
-        ingresoMensual: cambios.ingresoMensual || stats.ingresoTotal,
-        gastoRecurrente: cambios.gastoRecurrente || stats.totalGastosRecurrentes,
-        gastoVariable: cambios.gastoVariable || stats.totalGastosVariables,
-        ahorroObjetivos: cambios.ahorroObjetivos || (stats.ahorroDiarioNecesario * 30)
-    };
-    
-    const meses = cambios.meses || 12;
-    return proyectarALargoPlazo(meses, escenario);
-}
-
-function calcularPlanVital(años) {
-    const meses = años * 12;
-    const proyeccion = proyectarALargoPlazo(meses);
-    
-    const hitos = [];
-    
-    for (let año = 1; año <= años; año++) {
-        const mesIndex = (año * 12) - 1;
-        if (proyeccion.meses[mesIndex]) {
-            hitos.push({
-                año: año,
-                ahorroAcumulado: proyeccion.meses[mesIndex].ahorroAcumulado,
-                disponible: proyeccion.meses[mesIndex].disponible
+        function agregarRecordatorio(descripcion, fecha) {
+            state.recordatorios.push({
+                id: Date.now(),
+                descripcion,
+                fecha: fecha,
+                activo: true,
+                notificado: false
             });
+            guardarEstado();
+            render();
         }
-    }
-    
-    return {
-        proyeccion: proyeccion,
-        hitos: hitos,
-        objetivosAlcanzables: proyeccion.objetivosAlcanzados
-    };
-}
 
-function mostrarSimulador() {
-    const stats = calcularEstadisticas();
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    
-    modal.innerHTML = `
-        <div class="modal-content p-6" style="max-width: 800px;">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-white">🎯 Simulador de Escenarios</h2>
-                <button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-white text-2xl">×</button>
-            </div>
-            
-            <p class="text-gray-400 mb-6">Axusta os valores para ver como afectan as túas finanzas a futuro</p>
-            
-            <div class="space-y-4 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-gray-300 text-sm mb-2">💰 Ingreso Mensual</label>
-                        <input 
-                            type="number" 
-                            id="sim-ingreso"
-                            value="${stats.ingresoTotal.toFixed(0)}"
-                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
-                            step="100"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label class="block text-gray-300 text-sm mb-2">🔄 Gastos Recorrentes</label>
-                        <input 
-                            type="number" 
-                            id="sim-recurrente"
-                            value="${stats.totalGastosRecurrentes.toFixed(0)}"
-                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
-                            step="50"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label class="block text-gray-300 text-sm mb-2">💸 Gastos Variables</label>
-                        <input 
-                            type="number" 
-                            id="sim-variable"
-                            value="${stats.totalGastosVariables.toFixed(0)}"
-                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
-                            step="50"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label class="block text-gray-300 text-sm mb-2">🎯 Aforro Mensual Obxectivos</label>
-                        <input 
-                            type="number" 
-                            id="sim-ahorro"
-                            value="${(stats.ahorroDiarioNecesario * 30).toFixed(0)}"
-                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
-                            step="50"
-                        />
-                    </div>
-                </div>
+        function eliminarRecordatorio(id) {
+            state.recordatorios = state.recordatorios.filter(r => r.id !== id);
+            guardarEstado();
+            render();
+        }
+
+        // ============================================
+        // BACKUP AUTOMÁTICO
+        // ============================================
+        if (!state.backupConfig) {
+            state.backupConfig = {
+                activo: false,
+                frecuencia: 'semanal',
+                ultimoBackup: null
+            };
+        }
+
+        function exportarDatosCSV() {
+            try {
+                let csv = 'Tipo,Descrición,Monto,Categoría,Conta,Fecha\n';
                 
-                <div>
-                    <label class="block text-gray-300 text-sm mb-2">📅 Meses a Proxectar</label>
-                    <select id="sim-meses" class="input-neon w-full px-4 py-3 rounded-xl text-white">
-                        <option value="3">3 meses</option>
-                        <option value="6">6 meses</option>
-                        <option value="12" selected>1 ano</option>
-                        <option value="24">2 anos</option>
-                        <option value="36">3 anos</option>
-                        <option value="60">5 anos</option>
-                        <option value="120">10 anos</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button 
-                onclick="ejecutarSimulacion()"
-                class="btn-neon w-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold mb-6"
-            >
-                🚀 Simular
-            </button>
-            
-            <div id="resultados-simulacion" class="hidden">
-                <div class="card-neon rounded-2xl p-6 mb-4">
-                    <h3 class="text-xl font-bold text-white mb-4">📊 Resultados da Simulación</h3>
-                    <div id="datos-simulacion"></div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-}
-
-function ejecutarSimulacion() {
-    const ingreso = parseFloat(document.getElementById('sim-ingreso').value) || 0;
-    const recurrente = parseFloat(document.getElementById('sim-recurrente').value) || 0;
-    const variable = parseFloat(document.getElementById('sim-variable').value) || 0;
-    const ahorro = parseFloat(document.getElementById('sim-ahorro').value) || 0;
-    const meses = parseInt(document.getElementById('sim-meses').value) || 12;
-    
-    const resultado = simularEscenario({
-        ingresoMensual: ingreso,
-        gastoRecurrente: recurrente,
-        gastoVariable: variable,
-        ahorroObjetivos: ahorro,
-        meses: meses
-    });
-    
-    const mesFinal = resultado.meses[resultado.meses.length - 1];
-    
-    let html = `
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-xl p-4 border border-green-500/30">
-                <p class="text-gray-400 text-sm mb-1">💰 Dispoñible Final</p>
-                <p class="text-3xl font-black text-green-400">${mesFinal.disponible.toFixed(2)}€</p>
-            </div>
-            
-            <div class="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-xl p-4 border border-blue-500/30">
-                <p class="text-gray-400 text-sm mb-1">🎯 Aforro Acumulado</p>
-                <p class="text-3xl font-black text-blue-400">${resultado.totalAhorrado.toFixed(2)}€</p>
-            </div>
-            
-            <div class="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-xl p-4 border border-purple-500/30">
-                <p class="text-gray-400 text-sm mb-1">📈 Aforro Mensual Medio</p>
-                <p class="text-3xl font-black text-purple-400">${(resultado.totalAhorrado / meses).toFixed(2)}€</p>
-            </div>
-        </div>
-        
-        ${resultado.objetivosAlcanzados.length > 0 ? `
-            <div class="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-xl p-4 border border-yellow-500/30 mb-4">
-                <h4 class="text-lg font-bold text-white mb-3">🎉 Obxectivos Alcanzables</h4>
-                <div class="space-y-2">
-                    ${resultado.objetivosAlcanzados.map(obj => `
-                        <div class="flex justify-between items-center">
-                            <span class="text-white">✅ ${obj.nombre}</span>
-                            <span class="text-yellow-400 font-bold">En ${obj.mesesNecesarios} meses</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        ` : `
-            <div class="bg-red-900/20 rounded-xl p-4 border border-red-500/30 mb-4">
-                <p class="text-red-400">⚠️ Con este escenario non alcanzarías ningún obxectivo</p>
-            </div>
-        `}
-        
-        <div class="bg-black/30 rounded-xl p-4">
-            <h4 class="text-lg font-bold text-white mb-3">📅 Hitos Principais</h4>
-            <div class="space-y-2 max-h-60 overflow-y-auto">
-                ${resultado.meses.filter((m, i) => i % Math.ceil(meses / 10) === 0 || i === meses - 1).map(mes => `
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-gray-400">Mes ${mes.mes}:</span>
-                        <div class="flex gap-4">
-                            <span class="text-blue-400">Aforro: ${mes.ahorroAcumulado.toFixed(0)}€</span>
-                            <span class="text-green-400">Dispoñible: ${mes.disponible.toFixed(0)}€</span>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('datos-simulacion').innerHTML = html;
-    document.getElementById('resultados-simulacion').classList.remove('hidden');
-}
-
-function mostrarPlanVital() {
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    
-    modal.innerHTML = `
-        <div class="modal-content p-6" style="max-width: 900px;">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-white">🌟 Plan Vital - Visión a Longo Prazo</h2>
-                <button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-white text-2xl">×</button>
-            </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                ${[1, 2, 5, 10].map(años => {
-                    const plan = calcularPlanVital(años);
-                    const hitoFinal = plan.hitos[plan.hitos.length - 1];
-                    
-                    return `
-                        <div class="card-neon rounded-xl p-4 text-center cursor-pointer hover:scale-105 transition-transform" onclick="mostrarDetallePlanVital(${años})">
-                            <p class="text-4xl mb-2">📅</p>
-                            <p class="text-white font-bold text-lg mb-2">${años} ${años === 1 ? 'Ano' : 'Anos'}</p>
-                            <p class="text-gray-400 text-sm mb-1">Aforro Total:</p>
-                            <p class="text-2xl font-black text-green-400">${hitoFinal ? hitoFinal.ahorroAcumulado.toFixed(0) : '0'}€</p>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-            
-            <div id="detalle-plan-vital"></div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-}
-
-function mostrarDetallePlanVital(años) {
-    const plan = calcularPlanVital(años);
-    
-    let html = `
-        <div class="card-neon rounded-2xl p-6">
-            <h3 class="text-xl font-bold text-white mb-4">📊 Proxección a ${años} ${años === 1 ? 'Ano' : 'Anos'}</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="bg-green-900/30 rounded-xl p-4">
-                    <p class="text-gray-400 text-sm mb-1">💰 Aforro Total</p>
-                    <p class="text-3xl font-black text-green-400">${plan.hitos[plan.hitos.length - 1].ahorroAcumulado.toFixed(2)}€</p>
-                </div>
+                state.gastos.forEach(g => {
+                    const cuenta = state.cuentas.find(c => c.id === g.cuentaId);
+                    csv += `Gasto,"${g.descripcion}",${g.monto},"${g.categoria || ''}","${cuenta?.nombre || ''}",${g.fecha}\n`;
+                });
                 
-                <div class="bg-blue-900/30 rounded-xl p-4">
-                    <p class="text-gray-400 text-sm mb-1">📈 Dispoñible Final</p>
-                    <p class="text-3xl font-black text-blue-400">${plan.hitos[plan.hitos.length - 1].disponible.toFixed(2)}€</p>
-                </div>
+                state.ingresos.forEach(i => {
+                    const cuenta = state.cuentas.find(c => c.id === i.cuentaId);
+                    csv += `Ingreso,"${i.descripcion}",${i.monto},,"${cuenta?.nombre || ''}",${i.fecha}\n`;
+                });
                 
-                <div class="bg-purple-900/30 rounded-xl p-4">
-                    <p class="text-gray-400 text-sm mb-1">🎯 Obxectivos</p>
-                    <p class="text-3xl font-black text-purple-400">${plan.objetivosAlcanzables.length}</p>
-                </div>
-            </div>
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `cartinos_${fecha}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('✅ Datos exportados a CSV');
+            } catch (error) {
+                alert('❌ Erro ao exportar');
+            }
+        }
+
+        function exportarDatosJSON() {
+            try {
+                const datos = {
+                    version: '1.0',
+                    fecha_exportacion: new Date().toISOString(),
+                    datos: {
+                        sueldo: state.sueldo,
+                        diaCobro: state.diaCobro,
+                        gastosRecurrentes: state.gastosRecurrentes,
+                        gastos: state.gastos,
+                        ingresos: state.ingresos,
+                        ajustes: state.ajustes,
+                        objetivosAhorro: state.objetivosAhorro,
+                        categorias: state.categorias,
+                        cuentas: state.cuentas,
+                        alertasConfig: state.alertasConfig,
+                        modoAhorroExtremo: state.modoAhorroExtremo,
+                        recordatorios: state.recordatorios,
+                        eventosCalendario: state.eventosCalendario
+                    }
+                };
+                
+                const json = JSON.stringify(datos, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `cartinos_backup_${fecha}.json`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('✅ Backup completo creado');
+            } catch (error) {
+                alert('❌ Erro ao crear backup');
+            }
+        }
+
+        function importarDatos() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
             
-            <div class="bg-black/30 rounded-xl p-4">
-                <h4 class="text-white font-bold mb-3">📅 Hitos Anuais</h4>
-                <div class="space-y-3">
-                    ${plan.hitos.map(hito => `
-                        <div class="flex justify-between items-center p-3 bg-black/30 rounded-xl">
-                            <span class="text-white font-semibold">Ano ${hito.año}</span>
-                            <div class="flex gap-6 text-sm">
-                                <span class="text-green-400">Aforro: ${hito.ahorroAcumulado.toFixed(0)}€</span>
-                                <span class="text-blue-400">Dispoñible: ${hito.disponible.toFixed(0)}€</span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const datos = JSON.parse(event.target.result);
+                        
+                        if (!datos.version || !datos.datos) {
+                            throw new Error('Formato inválido');
+                        }
+                        
+                        if (confirm('ATENCIÓN: Isto substituirá todos os datos actuais. Seguro?')) {
+                            Object.assign(state, datos.datos);
+                            guardarEstado();
+                            recalcularSaldosCuentas();
+                            render();
+                            alert('✅ Datos importados correctamente');
+                        }
+                    } catch (error) {
+                        alert('❌ Arquivo inválido');
+                    }
+                };
+                reader.readAsText(file);
+            };
             
-            ${plan.objetivosAlcanzables.length > 0 ? `
-                <div class="bg-yellow-900/20 rounded-xl p-4 border border-yellow-500/30 mt-4">
-                    <h4 class="text-white font-bold mb-3">🎉 Obxectivos que Alcanzarías</h4>
-                    <div class="space-y-2">
-                        ${plan.objetivosAlcanzables.map(obj => `
-                            <div class="flex justify-between items-center">
-                                <span class="text-white">✅ ${obj.nombre}</span>
-                                <span class="text-yellow-400">En ${obj.mesesNecesarios} meses</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : ''}
-        </div>
-    `;
-    
-    document.getElementById('detalle-plan-vital').innerHTML = html;
-}
-    
+            input.click();
+        }
+
+        function verificarBackupAutomatico() {
+            if (!state.backupConfig.activo) return;
+            
+            const ahora = new Date();
+            const ultimo = state.backupConfig.ultimoBackup ? new Date(state.backupConfig.ultimoBackup) : null;
+            
+            let debeHacer = false;
+            
+            if (!ultimo) {
+                debeHacer = true;
+            } else {
+                const dias = Math.floor((ahora - ultimo) / (1000 * 60 * 60 * 24));
+                
+                if (state.backupConfig.frecuencia === 'diario' && dias >= 1) debeHacer = true;
+                else if (state.backupConfig.frecuencia === 'semanal' && dias >= 7) debeHacer = true;
+                else if (state.backupConfig.frecuencia === 'mensual' && dias >= 30) debeHacer = true;
+            }
+            
+            if (debeHacer) {
+                exportarDatosJSON();
+                state.backupConfig.ultimoBackup = ahora.toISOString();
+                guardarEstado();
+            }
+        }
+
+        // ============================================
+        // ANÁLISE DE TENDENCIAS IA
+        // ============================================
+        function analizarTendencias() {
+            const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+            const gastosDelPeriodo = state.gastos.filter(g => {
+                const f = new Date(g.fecha);
+                return f >= inicioPeriodo && f <= finPeriodo;
+            });
+
+            if (gastosDelPeriodo.length === 0) {
+                return { insights: [], recomendaciones: [] };
+            }
+
+            const gastosPorDia = {};
+            gastosDelPeriodo.forEach(g => {
+                const dia = new Date(g.fecha).getDay();
+                gastosPorDia[dia] = (gastosPorDia[dia] || 0) + parseFloat(g.monto);
+            });
+            
+            const diasSemana = ['Domingo', 'Luns', 'Martes', 'Mércores', 'Xoves', 'Venres', 'Sábado'];
+            let diaMayorGasto = 0;
+            let mayorGastoDia = 0;
+            Object.entries(gastosPorDia).forEach(([dia, monto]) => {
+                if (monto > mayorGastoDia) {
+                    mayorGastoDia = monto;
+                    diaMayorGasto = parseInt(dia);
+                }
+            });
+
+            const gastosPorCategoria = {};
+            gastosDelPeriodo.forEach(g => {
+                const cat = g.categoria || 'Outros';
+                gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + parseFloat(g.monto);
+            });
+            
+            let categoriaDominante = null;
+            let mayorGastoCat = 0;
+            Object.entries(gastosPorCategoria).forEach(([cat, monto]) => {
+                if (monto > mayorGastoCat) {
+                    mayorGastoCat = monto;
+                    categoriaDominante = cat;
+                }
+            });
+
+            const insights = [
+                `📅 Os ${diasSemana[diaMayorGasto]} gastas máis: ${mayorGastoDia.toFixed(2)}€`,
+                `📊 A túa categoría dominante é ${categoriaDominante}: ${mayorGastoCat.toFixed(2)}€`,
+                `💰 Media diaria: ${(gastosDelPeriodo.reduce((s, g) => s + parseFloat(g.monto), 0) / gastosDelPeriodo.length).toFixed(2)}€`
+            ];
+
+            const recomendaciones = [
+                `Reduce un 10% en ${categoriaDominante} para aforrar ${(mayorGastoCat * 0.1).toFixed(2)}€`,
+                `Evita os ${diasSemana[diaMayorGasto]} para gastos non esenciais`
+            ];
+
+            return { insights, recomendaciones };
+        }
         function cambiarVista(nuevaVista) {
             // Actualizar clases active en navegación
             document.querySelectorAll('.nav-item').forEach(item => {
@@ -1926,99 +1647,7 @@ function mostrarDetallePlanVital(años) {
             render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-function mostrarToast(mensaje, tipo = 'success') {
-            // Eliminar toasts anteriores
-            document.querySelectorAll('.toast').forEach(t => t.remove());
-            
-            const toast = document.createElement('div');
-            toast.className = `toast ${tipo}`;
-            toast.textContent = mensaje;
-            document.body.appendChild(toast);
-            
-            // Mostrar
-            setTimeout(() => toast.classList.add('show'), 10);
-            
-            // Ocultar e eliminar
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 2500);
-        }
-        function guardarAccion(tipo, datos) {
-    const accion = {
-        tipo: tipo,
-        datos: JSON.parse(JSON.stringify(datos)),
-        timestamp: Date.now()
-    };
-    
-    state.historialAcciones.push(accion);
-    
-    // Mantén só as últimas N accións
-    if (state.historialAcciones.length > state.maxHistorial) {
-        state.historialAcciones.shift();
-    }
-}
 
-function deshacer() {
-    if (state.historialAcciones.length === 0) {
-        mostrarToast('❌ Non hai accións para desfacer', 'warning');
-        return;
-    }
-    
-    const accion = state.historialAcciones.pop();
-    
-    switch(accion.tipo) {
-        case 'agregarGasto':
-            state.gastos = state.gastos.filter(g => g.id !== accion.datos.id);
-            mostrarToast('↩️ Gasto desfeito', 'success');
-            break;
-            
-        case 'eliminarGasto':
-            state.gastos.push(accion.datos);
-            mostrarToast('↩️ Gasto restaurado', 'success');
-            break;
-            
-        case 'agregarIngreso':
-            state.ingresos = state.ingresos.filter(i => i.id !== accion.datos.id);
-            mostrarToast('↩️ Ingreso desfeito', 'success');
-            break;
-            
-        case 'eliminarIngreso':
-            state.ingresos.push(accion.datos);
-            mostrarToast('↩️ Ingreso restaurado', 'success');
-            break;
-            
-        case 'agregarTransferencia':
-            state.transferencias = state.transferencias.filter(t => t.id !== accion.datos.id);
-            mostrarToast('↩️ Transferencia desfeita', 'success');
-            break;
-            
-        case 'eliminarTransferencia':
-            state.transferencias.push(accion.datos);
-            mostrarToast('↩️ Transferencia restaurada', 'success');
-            break;
-            
-        case 'editarGasto':
-            const gastoOriginal = state.gastos.find(g => g.id === accion.datos.id);
-            if (gastoOriginal) {
-                Object.assign(gastoOriginal, accion.datos.estadoAnterior);
-            }
-            mostrarToast('↩️ Edición desfeita', 'success');
-            break;
-            
-        case 'editarIngreso':
-            const ingresoOriginal = state.ingresos.find(i => i.id === accion.datos.id);
-            if (ingresoOriginal) {
-                Object.assign(ingresoOriginal, accion.datos.estadoAnterior);
-            }
-            mostrarToast('↩️ Edición desfeita', 'success');
-            break;
-    }
-    
-    recalcularSaldosCuentas();
-    guardarEstado();
-    render();
-}
         function obtenerDatosGraficoPeriodo() {
             const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
             
@@ -2142,22 +1771,16 @@ function deshacer() {
                         <p class="text-gray-400 text-sm mb-4">💡 Escribe directo: "supermercado 30" ou "gasolina 45.50"</p>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                           <input 
+                            <input 
                                 type="text"
                                 id="gasto-texto"
                                 class="input-neon px-4 py-3 rounded-xl text-white md:col-span-1"
                                 placeholder="ex: mercadona 23.50"
                                 oninput="
                                     const parseado = parsearTextoInteligente(this.value);
-                                    const btn = document.getElementById('btn-agregar-gasto');
                                     if (parseado.monto) {
                                         document.getElementById('gasto-monto').value = parseado.monto;
                                         document.getElementById('gasto-categoria').value = parseado.categoria;
-                                        btn.disabled = false;
-                                        btn.style.opacity = '1';
-                                    } else {
-                                        btn.disabled = true;
-                                        btn.style.opacity = '0.5';
                                     }
                                 "
                                 onkeyup="if(event.key==='Enter') agregarGasto()"
@@ -2170,7 +1793,6 @@ function deshacer() {
                             </select>
                             <button 
                                 onclick="agregarGasto()"
-                                id="btn-agregar-gasto"
                                 class="btn-neon bg-gradient-to-r from-pink-600 to-red-600 px-6 py-3 rounded-xl font-bold"
                             >
                                 ➕ Engadir
@@ -2636,281 +2258,157 @@ function deshacer() {
                             </button>
                         </div>
                     </div>
-                    <!-- Transferencias entre Contas -->
-                    <div class="card-neon rounded-2xl p-6">
-                        <h2 class="text-2xl font-bold mb-6 text-white">🔄 Transferencias entre Contas</h2>
-                        <p class="text-gray-400 text-sm mb-4">Move diñeiro entre as túas contas sen afectar gastos nin ingresos</p>
-                        
-                        ${state.transferencias && state.transferencias.length > 0 ? `
-                            <div class="space-y-3 mb-6 max-h-60 overflow-y-auto">
-                                ${state.transferencias.slice().reverse().map(trans => {
-                                    const fecha = new Date(trans.fecha);
-                                    const origen = state.cuentas.find(c => c.id === trans.origenId);
-                                    const destino = state.cuentas.find(c => c.id === trans.destinoId);
-                                    return `
-                                        <div class="item-hover flex justify-between items-center bg-black/30 rounded-xl p-4">
-                                            <div class="flex-1">
-                                                <p class="text-white font-semibold">${origen?.nombre || 'Sen conta'} → ${destino?.nombre || 'Sen conta'}</p>
-                                                <p class="text-gray-400 text-sm mt-1">${fecha.toLocaleDateString('gl-ES')}${trans.descripcion ? ' - ' + trans.descripcion : ''}</p>
-                                            </div>
-                                            <div class="flex items-center gap-4">
-                                                <span class="font-bold text-lg text-blue-400">${parseFloat(trans.monto).toFixed(2)}€</span>
-                                                <button 
-                                                    onclick="
-                                                        if(confirm('Seguro que queres eliminar esta transferencia?')) {
-                                                            state.transferencias = state.transferencias.filter(t => t.id !== ${trans.id});
-                                                            recalcularSaldosCuentas();
-                                                            guardarEstado();
-                                                            render();
-                                                        }
-                                                    "
-                                                    class="delete-btn text-red-500 hover:text-red-400 transition-colors"
-                                                >
-                                                    ❌
-                                                </button>
-                                            </div>
-                                        </div>
-                                    `;
-                                }).join('')}
+                `;
+            }
+            // VISTA DE ESTADÍSTICAS (TODO O TEU CÓDIGO)
+            else if (state.vista === 'estadisticas') {
+                const datosGrafico = obtenerDatosGraficoPeriodo();
+                
+                html += `
+                    <div class="space-y-8">
+                        <!-- Información del Período -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-4 text-white">📅 Período Actual</h2>
+                            <p class="text-gray-400">
+                                Do <span class="text-white font-semibold">${stats.inicioPeriodo.toLocaleDateString('gl-ES')}</span> 
+                                ao <span class="text-white font-semibold">${stats.finPeriodo.toLocaleDateString('gl-ES')}</span>
+                            </p>
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Días transcurridos</p>
+                                    <p class="text-2xl font-bold text-blue-400">${stats.diasTranscurridos}</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-400 text-sm">Días restantes</p>
+                                    <p class="text-2xl font-bold text-yellow-400">${stats.diasRestantes}</p>
+                                </div>
                             </div>
-                        ` : '<p class="text-gray-400 text-center py-4 mb-6">Non hai transferencias rexistradas</p>'}
+                        </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                            <select 
-                                id="trans-origen"
-                                class="input-neon px-4 py-3 rounded-xl text-white"
-                            >
-                                <option value="">Desde...</option>
-                                ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
-                            </select>
-                            <select 
-                                id="trans-destino"
-                                class="input-neon px-4 py-3 rounded-xl text-white"
-                            >
-                                <option value="">Ata...</option>
-                                ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
-                            </select>
-                            <input 
-                                type="number"
-                                id="trans-monto"
-                                step="0.01"
-                                min="0"
-                                class="input-neon px-4 py-3 rounded-xl text-white"
-                                placeholder="Monto (€)"
-                            />
-                            <input 
-                                type="text"
-                                id="trans-descripcion"
-                                class="input-neon px-4 py-3 rounded-xl text-white"
-                                placeholder="Descrición (opcional)"
-                            />
-                            <button 
-                                onclick="realizarTransferencia()"
-                                class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 rounded-xl font-bold"
-                            >
-                                🔄 Transferir
-                            </button>
+                        <!-- Gráfico de Pastel -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h2 class="text-2xl font-bold mb-6 text-white">📊 Distribución de Gastos por Categoría</h2>
+                            ${datosGrafico.length > 0 ? `
+                                <canvas id="pieChart" width="400" height="400"></canvas>
+                                <div class="mt-6 space-y-3">
+                                    <h3 class="text-lg font-bold text-white mb-3">Desglose por Categoría</h3>
+                                    ${datosGrafico.map(dato => {
+                                        const total = datosGrafico.reduce((sum, d) => sum + d.valor, 0);
+                                        const porcentaje = (dato.valor / total * 100).toFixed(1);
+                                        return `
+                                            <div class="flex justify-between items-center bg-black/30 rounded-xl p-3">
+                                                <div class="flex items-center gap-3 flex-1">
+                                                    <div 
+                                                        class="w-4 h-4 rounded"
+                                                        style="background-color: ${obtenerColorCategoria(dato.nombre)}"
+                                                    ></div>
+                                                    <span class="text-white font-semibold">${dato.nombre}</span>
+                                                    <span class="text-gray-400 text-sm">(${porcentaje}%)</span>
+                                                </div>
+                                                <span class="text-white font-bold">${dato.valor.toFixed(2)}€</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                    <div class="border-t border-purple-500/30 pt-3 flex justify-between items-center">
+                                        <span class="text-gray-300 font-bold">Total Gastos:</span>
+                                        <span class="text-red-400 font-bold text-xl">${datosGrafico.reduce((sum, d) => sum + d.valor, 0).toFixed(2)}€</span>
+                                    </div>
+                                </div>
+                            ` : '<p class="text-gray-400 text-center py-8">Non hai datos suficientes para mostrar o gráfico</p>'}
+                        </div>
+
+                        <!-- Progreso del Período -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h3 class="text-xl font-bold text-white mb-4">📈 Progreso do Período</h3>
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-400">Gastaches o ${stats.porcentajeGastado.toFixed(1)}% dos teus ingresos</span>
+                                    <span class="text-white font-semibold">${stats.totalGastos.toFixed(2)}€ / ${stats.ingresoTotal.toFixed(2)}€</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-4">
+                                    <div 
+                                        class="h-4 rounded-full transition-all duration-500 ${stats.porcentajeGastado > 80 ? 'bg-red-500' : stats.porcentajeGastado > 50 ? 'bg-yellow-500' : 'bg-green-500'}"
+                                        style="width: ${Math.min(stats.porcentajeGastado, 100)}%"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Todos los Gastos del Período -->
+                        <div class="card-neon rounded-2xl p-6">
+                            <h3 class="text-xl font-bold text-white mb-4">📊 Todos os Gastos do Período</h3>
+                            ${state.gastos.length > 0 ? `
+                                <div class="space-y-2 max-h-96 overflow-y-auto">
+                                    ${state.gastos.slice().reverse().map(gasto => {
+                                        const fecha = new Date(gasto.fecha);
+                                        const cuenta = state.cuentas.find(c => c.id === gasto.cuentaId);
+                                        const editando = state.editando && state.editando.tipo === 'gasto' && state.editando.id === gasto.id;
+                                        
+                                        if (editando) {
+                                            return `
+                                                <div class="bg-black/30 rounded-xl p-3">
+                                                    <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                                                        <input type="text" id="edit-desc-${gasto.id}" value="${gasto.descripcion}" class="input-neon px-2 py-1 rounded text-white text-sm" placeholder="Descripción" />
+                                                        <input type="number" step="0.01" min="0" id="edit-monto-${gasto.id}" value="${gasto.monto}" class="input-neon px-2 py-1 rounded text-white text-sm" />
+                                                        <select id="edit-cat-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
+                                                            ${state.categorias.map(cat => `<option value="${cat}" ${gasto.categoria === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                                                        </select>
+                                                        <select id="edit-cuenta-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
+                                                            ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
+                                                        </select>
+                                                        <div class="flex gap-1">
+                                                            <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
+                                                            <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }
+                                        
+                                        return `
+                                            <div class="item-hover flex justify-between items-center bg-black/30 rounded-xl p-3">
+                                                <div class="flex-1">
+                                                    <div class="flex items-center gap-2">
+                                                        <div 
+                                                            class="w-3 h-3 rounded-full"
+                                                            style="background-color: ${obtenerColorCategoria(gasto.categoria || 'Outros')}"
+                                                        ></div>
+                                                        <span class="text-white font-semibold">${gasto.descripcion}</span>
+                                                        ${gasto.esRecurrente ? '<span class="text-xs bg-purple-600 px-2 py-1 rounded">Recorrente</span>' : ''}
+                                                    </div>
+                                                    <p class="text-gray-400 text-xs mt-1">${fecha.toLocaleDateString('gl-ES')} - ${gasto.categoria || 'Outros'} - ${cuenta ? cuenta.nombre : 'Sen conta'}</p>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-red-400 font-bold">${parseFloat(gasto.monto).toFixed(2)}€</span>
+                                                    <button 
+                                                        onclick="editarGasto(${gasto.id})"
+                                                        class="delete-btn text-blue-500 hover:text-blue-400 transition-colors"
+                                                        title="Editar"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button 
+                                                        onclick="eliminarGasto(${gasto.id})"
+                                                        class="delete-btn text-red-500 hover:text-red-400 transition-colors"
+                                                        title="Eliminar"
+                                                    >
+                                                        ❌
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            ` : '<p class="text-gray-400 text-center py-4">Non hai gastos rexistrados neste período</p>'}
                         </div>
                     </div>
                 `;
             }
-            // VISTA DE ESTADÍSTICAS (TODO O TEU CÓDIGO)
- else if (state.vista === 'estadisticas') {
-    const datosGrafico = obtenerDatosGraficoPeriodo();
-    const analisis = analizarTendenciasAvanzado();
-    
-    html += `
-        <div class="space-y-8">
-            <!-- Período Actual -->
-            <div class="card-neon rounded-2xl p-6">
-                <h2 class="text-2xl font-bold mb-4 text-white">📅 Período Actual</h2>
-                <p class="text-gray-400">
-                    Do <span class="text-white font-semibold">${stats.inicioPeriodo.toLocaleDateString('gl-ES')}</span> 
-                    ao <span class="text-white font-semibold">${stats.finPeriodo.toLocaleDateString('gl-ES')}</span>
-                </p>
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <p class="text-gray-400 text-sm">Días transcorridos</p>
-                        <p class="text-2xl font-bold text-blue-400">${stats.diasTranscurridos}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400 text-sm">Días restantes</p>
-                        <p class="text-2xl font-bold text-yellow-400">${stats.diasRestantes}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Progreso del Período -->
-            <div class="card-neon rounded-2xl p-6">
-                <h3 class="text-xl font-bold text-white mb-4">📈 Progreso do Período</h3>
-                <div class="mb-4">
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-gray-400">Gastaches o ${stats.porcentajeGastado.toFixed(1)}% dos teus ingresos</span>
-                        <span class="text-white font-semibold">${stats.totalGastos.toFixed(2)}€ / ${stats.ingresoTotal.toFixed(2)}€</span>
-                    </div>
-                    <div class="w-full bg-gray-700 rounded-full h-4">
-                        <div 
-                            class="h-4 rounded-full transition-all duration-500 ${stats.porcentajeGastado > 80 ? 'bg-red-500' : stats.porcentajeGastado > 50 ? 'bg-yellow-500' : 'bg-green-500'}"
-                            style="width: ${Math.min(stats.porcentajeGastado, 100)}%"
-                        ></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Insights & Recomendacións -->
-            <div class="card-neon rounded-2xl p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-white">🧠 Insights & Tendencias</h2>
-                    <button 
-                        onclick="mostrarDialogoRecurrentesSugeridos()"
-                        class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 rounded-xl font-bold text-sm"
-                    >
-                        🔍 Detectar Recorrentes
-                    </button>
-                </div>
-                
-                ${analisis.insights.length > 0 ? `
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-white mb-3">💡 Insights</h3>
-                        <div class="space-y-2">
-                            ${analisis.insights.map(insight => `
-                                <div class="bg-black/30 rounded-xl p-3">
-                                    <p class="text-cyan-400">${insight}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${analisis.recomendaciones.length > 0 ? `
-                    <div>
-                        <h3 class="text-lg font-bold text-white mb-3">🎯 Recomendacións</h3>
-                        <div class="space-y-2">
-                            ${analisis.recomendaciones.map(rec => `
-                                <div class="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-xl p-3 border border-purple-500/30">
-                                    <p class="text-white">${rec}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-            </div>
-
-            <!-- Gráfico por Día da Semana -->
-            ${Object.keys(analisis.gastosPorDia).length > 0 ? `
-                <div class="card-neon rounded-2xl p-6">
-                    <h2 class="text-2xl font-bold mb-6 text-white">📅 Gastos por Día da Semana</h2>
-                    <canvas id="barChart" width="400" height="250"></canvas>
-                </div>
-            ` : ''}
-
-            <!-- Gráfico de Pastel -->
-            <div class="card-neon rounded-2xl p-6">
-                <h2 class="text-2xl font-bold mb-6 text-white">📊 Distribución de Gastos por Categoría</h2>
-                ${datosGrafico.length > 0 ? `
-                    <canvas id="pieChart" width="400" height="400"></canvas>
-                    <div class="mt-6 space-y-3">
-                        <h3 class="text-lg font-bold text-white mb-3">Desglose por Categoría</h3>
-                        ${datosGrafico.map(dato => {
-                            const total = datosGrafico.reduce((sum, d) => sum + d.valor, 0);
-                            const porcentaje = (dato.valor / total * 100).toFixed(1);
-                            return `
-                                <div class="flex justify-between items-center bg-black/30 rounded-xl p-3">
-                                    <div class="flex items-center gap-3 flex-1">
-                                        <div 
-                                            class="w-4 h-4 rounded"
-                                            style="background-color: ${obtenerColorCategoria(dato.nombre)}"
-                                        ></div>
-                                        <span class="text-white font-semibold">${dato.nombre}</span>
-                                        <span class="text-gray-400 text-sm">(${porcentaje}%)</span>
-                                    </div>
-                                    <span class="text-white font-bold">${dato.valor.toFixed(2)}€</span>
-                                </div>
-                            `;
-                        }).join('')}
-                        <div class="border-t border-purple-500/30 pt-3 flex justify-between items-center">
-                            <span class="text-gray-300 font-bold">Total Gastos:</span>
-                            <span class="text-red-400 font-bold text-xl">${datosGrafico.reduce((sum, d) => sum + d.valor, 0).toFixed(2)}€</span>
-                        </div>
-                    </div>
-                ` : '<p class="text-gray-400 text-center py-8">Non hai datos suficientes para mostrar o gráfico</p>'}
-            </div>
-
-            <!-- Todos los Gastos del Período -->
-            <div class="card-neon rounded-2xl p-6">
-                <h3 class="text-xl font-bold text-white mb-4">📊 Todos os Gastos do Período</h3>
-                ${state.gastos.length > 0 ? `
-                    <div class="space-y-2 max-h-96 overflow-y-auto">
-                        ${state.gastos.slice().reverse().map(gasto => {
-                            const fecha = new Date(gasto.fecha);
-                            const cuenta = state.cuentas.find(c => c.id === gasto.cuentaId);
-                            const editando = state.editando && state.editando.tipo === 'gasto' && state.editando.id === gasto.id;
-                            
-                            if (editando) {
-                                return `
-                                    <div class="bg-black/30 rounded-xl p-3">
-                                        <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
-                                            <input type="text" id="edit-desc-${gasto.id}" value="${gasto.descripcion}" class="input-neon px-2 py-1 rounded text-white text-sm" placeholder="Descripción" />
-                                            <input type="number" step="0.01" min="0" id="edit-monto-${gasto.id}" value="${gasto.monto}" class="input-neon px-2 py-1 rounded text-white text-sm" />
-                                            <select id="edit-cat-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
-                                                ${state.categorias.map(cat => `<option value="${cat}" ${gasto.categoria === cat ? 'selected' : ''}>${cat}</option>`).join('')}
-                                            </select>
-                                            <select id="edit-cuenta-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
-                                                ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
-                                            </select>
-                                            <div class="flex gap-1">
-                                                <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
-                                                <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                            
-                            return `
-                                <div class="item-hover flex justify-between items-center bg-black/30 rounded-xl p-3">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <div 
-                                                class="w-3 h-3 rounded-full"
-                                                style="background-color: ${obtenerColorCategoria(gasto.categoria || 'Outros')}"
-                                            ></div>
-                                            <span class="text-white font-semibold">${gasto.descripcion}</span>
-                                            ${gasto.esRecurrente ? '<span class="text-xs bg-purple-600 px-2 py-1 rounded">Recorrente</span>' : ''}
-                                        </div>
-                                        <p class="text-gray-400 text-xs mt-1">${fecha.toLocaleDateString('gl-ES')} - ${gasto.categoria || 'Outros'} - ${cuenta ? cuenta.nombre : 'Sen conta'}</p>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-red-400 font-bold">${parseFloat(gasto.monto).toFixed(2)}€</span>
-                                        <button 
-                                            onclick="editarGasto(${gasto.id})"
-                                            class="delete-btn text-blue-500 hover:text-blue-400 transition-colors"
-                                            title="Editar"
-                                        >
-                                            ✏️
-                                        </button>
-                                        <button 
-                                            onclick="eliminarGasto(${gasto.id})"
-                                            class="delete-btn text-red-500 hover:text-red-400 transition-colors"
-                                            title="Eliminar"
-                                        >
-                                            ❌
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                ` : '<p class="text-gray-400 text-center py-4">Non hai gastos rexistrados neste período</p>'}
-            </div>
-        </div>
-    `;
-}
-           
           // VISTA DE OBXETIVOS (TODO O TEU CÓDIGO)
             else if (state.vista === 'objetivos') {
                 html += `
                     <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">🎯 Obxetivos de Aforro</h2>
                         
                         ${state.objetivosAhorro.length > 0 ? `
                             <div class="space-y-4 mb-6">
@@ -3674,111 +3172,55 @@ function deshacer() {
                 lucide.createIcons();
             }
 
-           // Crear gráficos si estamos en la vista de estadísticas
-if (state.vista === 'estadisticas') {
-    setTimeout(() => {
-        const datosGrafico = obtenerDatosGraficoPeriodo();
-        const analisis = analizarTendenciasAvanzado();
-        
-        // Gráfico de pastel
-        if (datosGrafico.length > 0) {
-            const pieCtx = document.getElementById('pieChart');
-            if (pieCtx) {
-                new Chart(pieCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: datosGrafico.map(d => d.nombre),
-                        datasets: [{
-                            data: datosGrafico.map(d => d.valor),
-                            backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
-                            borderWidth: 2,
-                            borderColor: '#0f0f23'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: '#ffffff',
-                                    padding: 15,
-                                    font: { size: 12 }
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.label + ': ' + context.parsed.toFixed(2) + '€';
+            // Crear gráficos si estamos en la vista de estadísticas
+            if (state.vista === 'estadisticas') {
+                setTimeout(() => {
+                    const datosGrafico = obtenerDatosGraficoPeriodo();
+                    if (datosGrafico.length > 0) {
+                        const pieCtx = document.getElementById('pieChart');
+                        if (pieCtx) {
+                            new Chart(pieCtx, {
+                                type: 'pie',
+                                data: {
+                                    labels: datosGrafico.map(d => d.nombre),
+                                    datasets: [{
+                                        data: datosGrafico.map(d => d.valor),
+                                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
+                                        borderWidth: 2,
+                                        borderColor: '#0f0f23'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: true,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                color: '#ffffff',
+                                                padding: 15,
+                                                font: {
+                                                    size: 12
+                                                }
+                                            }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return context.label + ': ' + context.parsed.toFixed(2) + '€';
+                                                }
+                                            }
+                                        }
                                     }
                                 }
-                            }
+                            });
                         }
                     }
-                });
+                }, 100);
             }
         }
-        
-        // Gráfico de barras por día da semana
-        if (Object.keys(analisis.gastosPorDia).length > 0) {
-            const barCtx = document.getElementById('barChart');
-            if (barCtx) {
-                const labels = Object.values(analisis.gastosPorDia).map(d => d.nombre);
-                const data = Object.values(analisis.gastosPorDia).map(d => d.total);
-                
-                new Chart(barCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Gasto Total (€)',
-                            data: data,
-                            backgroundColor: 'rgba(131, 56, 236, 0.8)',
-                            borderColor: '#8338EC',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: { color: '#ffffff' },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                            },
-                            x: {
-                                ticks: { color: '#ffffff' },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                labels: { color: '#ffffff' }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return 'Total: ' + context.parsed.y.toFixed(2) + '€';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }
-    }, 100);
-}
-         
-         // NOVO: Mostrar/ocultar botón deshacer
-            const btnDeshacer = document.getElementById('btn-deshacer');
-            if (btnDeshacer) {
-                btnDeshacer.style.display = state.historialAcciones.length > 0 ? 'block' : 'none';
-            }
-        }
-
+// ============================================
+    // ============================================
         // PULL TO REFRESH SIMPLIFICADO
         // ============================================
         let startY = 0;
@@ -3858,6 +3300,8 @@ if (state.vista === 'estadisticas') {
             pulling = false;
         }, { passive: true });
 
+        // Renderizar la aplicación inicialmente
+        render();
         // Renderizar la aplicación inicialmente
         render();
     </script>
