@@ -457,37 +457,38 @@
 
     <script>
       // Estado global (TODO O TEU CÓDIGO)
-       let state = {
-    diaCobro: localStorage.getItem('diaCobro') || '',
-    gastosRecurrentes: JSON.parse(localStorage.getItem('gastosRecurrentes') || '[]'),
-    gastos: JSON.parse(localStorage.getItem('gastos') || '[]'),
-    ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
-    ajustes: JSON.parse(localStorage.getItem('ajustes') || '[]'),
-    transferencias: JSON.parse(localStorage.getItem('transferencias') || '[]'),
-    objetivosAhorro: JSON.parse(localStorage.getItem('objetivosAhorro') || '[]'),
-    categorias: JSON.parse(localStorage.getItem('categorias') || '["Alimentación", "Transporte", "Entretenimiento", "Salud", "Hogar", "Ropa", "Outros"]'),
-    cuentas: JSON.parse(localStorage.getItem('cuentas') || '[{"id": 1, "nombre": "Conta Principal", "tipo": "banco", "saldoInicial": 0, "saldo": 0}]'),
-    alertasConfig: JSON.parse(localStorage.getItem('alertasConfig') || '{"diasParaCobro": 3, "porcentajeGastoMitadMes": 50, "alertaObjetivosEnRiesgo": true}'),
-    sueldoConfirmadoPeriodoActual: localStorage.getItem('sueldoConfirmadoPeriodoActual') || '',
-    historialAcciones: [],
-    maxHistorial: 10,
-    vista: 'principal',
-    alertasMostradas: [],
-    ultimaActualizacionRecurrentes: localStorage.getItem('ultimaActualizacionRecurrentes') || '',
-    editando: null,
-    eventosCalendario: JSON.parse(localStorage.getItem('eventosCalendario') || '[]')
-    fechaSimulada: null,
-    modoAhorroExtremo: {
-        activo: false,
-        categoriasEsenciales: ['Alimentación', 'Salud', 'Transporte', 'Hogar'],
-        limiteGastoDiario: 0
+          let state = {
+            diaCobro: localStorage.getItem('diaCobro') || '',
+            gastosRecurrentes: JSON.parse(localStorage.getItem('gastosRecurrentes') || '[]'),
+            gastos: JSON.parse(localStorage.getItem('gastos') || '[]'),
+            ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
+            ajustes: JSON.parse(localStorage.getItem('ajustes') || '[]'),
+            transferencias: JSON.parse(localStorage.getItem('transferencias') || '[]'),
+            objetivosAhorro: JSON.parse(localStorage.getItem('objetivosAhorro') || '[]'),
+            categorias: JSON.parse(localStorage.getItem('categorias') || '["Alimentación", "Transporte", "Entretenimiento", "Salud", "Hogar", "Ropa", "Outros"]'),
+            cuentas: JSON.parse(localStorage.getItem('cuentas') || '[{"id": 1, "nombre": "Conta Principal", "tipo": "banco", "saldoInicial": 0, "saldo": 0}]'),
+            alertasConfig: JSON.parse(localStorage.getItem('alertasConfig') || '{"diasParaCobro": 3, "porcentajeGastoMitadMes": 50, "alertaObjetivosEnRiesgo": true}'),
+            sueldoConfirmadoPeriodoActual: localStorage.getItem('sueldoConfirmadoPeriodoActual') || '',
+            historialAcciones: [],
+            maxHistorial: 10,
+            vista: 'principal',
+            alertasMostradas: [],
+            ultimaActualizacionRecurrentes: localStorage.getItem('ultimaActualizacionRecurrentes') || '',
+            editando: null,
+            eventosCalendario: JSON.parse(localStorage.getItem('eventosCalendario') || '[]'),
+            // Nuevas propiedades añadidas
+            fechaSimulada: null,
+            modoAhorroExtremo: {
+                activo: false,
+                categoriasEsenciales: ['Alimentación', 'Salud', 'Transporte', 'Hogar'],
+                limiteGastoDiario: 0
             },
-    notificacionesActivadas: false,
-    recordatorios: [],
-    backupConfig: {
-        activo: false,
-        frecuencia: 'semanal',
-        ultimoBackup: null
+            notificacionesActivadas: false,
+            recordatorios: [],
+            backupConfig: {
+                activo: false,
+                frecuencia: 'semanal',
+                ultimoBackup: null
             }
         };
 
@@ -1471,25 +1472,27 @@ function realizarTransferencia() {
             }
         }
 
-        function mostrarDialogoAhorroObjetivo() {
+                function mostrarDialogoAhorroObjetivo() {
             const stats = calcularEstadisticas();
             if (stats.ahorroDiarioNecesario > 0) {
                 if (confirm(`💡 Intenta aforrar ${stats.ahorroDiarioNecesario.toFixed(2)}€ hoxe para os teus obxectivos. ¿Queres engadir este aforro?`)) {
                     // Distribuir aforro entre obxectivos
-                    const ahorroPorObjetivo = stats.ahorroDiarioNecesario / state.objetivosAhorro.filter(o => o.activo !== false).length;
-                    
-                    state.objetivosAhorro.forEach(objetivo => {
-                        if (objetivo.activo !== false) {
+                    const objetivosActivos = state.objetivosAhorro.filter(o => o.activo !== false);
+                    if (objetivosActivos.length > 0) {
+                        const ahorroPorObjetivo = stats.ahorroDiarioNecesario / objetivosActivos.length;
+                        
+                        objetivosActivos.forEach(objetivo => {
                             objetivo.montoAhorrado = parseFloat(objetivo.montoAhorrado || 0) + ahorroPorObjetivo;
-                        }
-                    });
-                    
-                    guardarEstado();
-                    render();
-                    mostrarToast(`✅ Aforro de ${stats.ahorroDiarioNecesario.toFixed(2)}€ distribuído entre obxectivos`, 'success');
+                        });
+                        
+                        guardarEstado();
+                        render();
+                        mostrarToast(`✅ Aforro de ${stats.ahorroDiarioNecesario.toFixed(2)}€ distribuído entre obxectivos`, 'success');
+                    }
                 }
             }
-        }            // Placeholder para futura implementación
+        } 
+        // Placeholder para futura implementación
         }
 // ============================================
         // MODO AHORRO EXTREMO
@@ -1542,7 +1545,7 @@ function realizarTransferencia() {
             guardarEstado();
             render();
         }
-                function agregarCategoriaEsencial(categoria) {
+        function agregarCategoriaEsencial(categoria) {
             if (!state.modoAhorroExtremo.categoriasEsenciales.includes(categoria)) {
                 state.modoAhorroExtremo.categoriasEsenciales.push(categoria);
                 guardarEstado();
@@ -1555,7 +1558,8 @@ function realizarTransferencia() {
             guardarEstado();
             render();
         }
-        /* ============================================
+        
+        ============================================
 // GRUPO 6 - PLANIFICACIÓN LARGA
 // ============================================
 
@@ -2483,7 +2487,6 @@ function mostrarDialogoRecurrentesSugeridos() {
             </div>
         </div>
 }
-/*
         function cambiarVista(nuevaVista) {
             // Actualizar clases active en navegación
             document.querySelectorAll('.nav-item').forEach(item => {
