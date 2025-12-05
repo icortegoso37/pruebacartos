@@ -2453,40 +2453,7 @@ function mostrarDialogoRecurrentesSugeridos() {
     document.body.appendChild(modal);
 }
         html += `
-        <div class="card-neon rounded-2xl p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-bold text-white">🎯 Obxetivos de Aforro</h2>
-            <div class="flex gap-2">
-                <button 
-                    onclick="mostrarSimulador()"
-                    class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 rounded-xl font-bold text-sm"
-                >
-                    🎯 Simulador
-                </button>
-                <button 
-                    onclick="mostrarPlanVital()"
-                    class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 rounded-xl font-bold text-sm"
-                >
-                    🌟 Plan Vital
-                </button>
-            </div>
-        </div>         
-<div class="flex gap-2">
-                <button 
-                    onclick="mostrarSimulador()"
-                    class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 rounded-xl font-bold text-sm"
-                >
-                    🎯 Simulador
-                </button>
-                <button 
-                    onclick="mostrarPlanVital()"
-                    class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 rounded-xl font-bold text-sm"
-                >
-                    🌟 Plan Vital
-                </button>
-            </div>
-        </div>
-}
+       
         function cambiarVista(nuevaVista) {
             // Actualizar clases active en navegación
             document.querySelectorAll('.nav-item').forEach(item => {
