@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Cartiños">
     <meta name="theme-color" content="#0f0f23">
     <title>Cartiños - Xestor de Gastos Inteligente</title>
     
@@ -458,6 +460,41 @@
             localStorage.setItem('alertasConfig', JSON.stringify(state.alertasConfig));
             localStorage.setItem('ultimaActualizacionRecurrentes', state.ultimaActualizacionRecurrentes);
             localStorage.setItem('eventosCalendario', JSON.stringify(state.eventosCalendario));
+        }
+        // Validación de campos numéricos
+        function validarMonto(monto, campo = 'Monto') {
+            const valor = parseFloat(monto);
+            if (!monto || monto === '' || isNaN(valor)) {
+                mostrarError(`${campo} non pode estar baleiro`);
+                return false;
+            }
+            if (valor <= 0) {
+                mostrarError(`${campo} debe ser maior que 0`);
+                return false;
+            }
+            if (valor > 999999) {
+                mostrarError(`${campo} é demasiado grande`);
+                return false;
+            }
+            return true;
+        }
+
+        // Mostrar error temporal
+        function mostrarError(mensaje) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-xl z-50 shadow-lg animate-bounce';
+            errorDiv.textContent = `❌ ${mensaje}`;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 3000);
+        }
+
+        // Mostrar éxito temporal
+        function mostrarExito(mensaje) {
+            const exitoDiv = document.createElement('div');
+            exitoDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl z-50 shadow-lg';
+            exitoDiv.textContent = `✅ ${mensaje}`;
+            document.body.appendChild(exitoDiv);
+            setTimeout(() => exitoDiv.remove(), 2000);
         }
 
         // TODO O TEU CÓDIGO DE PARSER INTELIGENTE
@@ -1003,7 +1040,7 @@
             render();
         }
 
-        function agregarGasto() {
+       function agregarGasto() {
             const textoInput = document.getElementById('gasto-texto');
             const texto = textoInput ? textoInput.value : '';
             const montoManual = document.getElementById('gasto-monto') ? document.getElementById('gasto-monto').value : '';
@@ -1017,12 +1054,18 @@
                 descripcion = parseado.descripcion;
                 monto = parseado.monto || (montoManual ? parseFloat(montoManual) : null);
                 categoria = parseado.categoria;
-                textoInput.value = '';
             } else {
                 descripcion = 'Gasto';
                 monto = montoManual ? parseFloat(montoManual) : null;
                 categoria = categoriaManual;
             }
+            
+            // Validar monto
+            if (!validarMonto(monto, 'O monto do gasto')) {
+                return;
+            }
+            
+            if (texto && textoInput) textoInput.value = '';
             
             if (monto && monto > 0) {
                 // NOVA VALIDACIÓN MODO AHORRO EXTREMO
@@ -1052,6 +1095,7 @@
                 
                 guardarEstado();
                 verificarAlertas();
+                mostrarExito(`Gasto engadido: ${descripcion} - ${monto.toFixed(2)}€`);
                 
                 const stats = calcularEstadisticas();
                 if (stats.gastoPorDiaRestante > 0 && state.objetivosAhorro.length > 0) {
@@ -1065,10 +1109,13 @@
         function eliminarGasto(id) {
             const gasto = state.gastos.find(g => g.id === id);
             if (gasto) {
-                state.gastos = state.gastos.filter(g => g.id !== id);
-                recalcularSaldosCuentas();
-                guardarEstado();
-                render();
+                if (confirm(`¿Seguro que queres eliminar o gasto "${gasto.descripcion}" (${gasto.monto.toFixed(2)}€)?`)) {
+                    state.gastos = state.gastos.filter(g => g.id !== id);
+                    recalcularSaldosCuentas();
+                    guardarEstado();
+                    mostrarExito(`Ingreso engadido: ${descripcion} - ${monto.toFixed(2)}€`);
+                    render();
+                }
             }
         }
 
@@ -1129,13 +1176,15 @@
             }
         }
 
-        function eliminarIngreso(id) {
+       function eliminarIngreso(id) {
             const ingreso = state.ingresos.find(i => i.id === id);
             if (ingreso) {
-                state.ingresos = state.ingresos.filter(i => i.id !== id);
-                recalcularSaldosCuentas();
-                guardarEstado();
-                render();
+                if (confirm(`¿Seguro que queres eliminar o ingreso "${ingreso.descripcion}" (${ingreso.monto.toFixed(2)}€)?`)) {
+                    state.ingresos = state.ingresos.filter(i => i.id !== id);
+                    recalcularSaldosCuentas();
+                    guardarEstado();
+                    render();
+                }
             }
         }
 
@@ -1217,9 +1266,12 @@
         }
 
         function eliminarObjetivo(id) {
-            state.objetivosAhorro = state.objetivosAhorro.filter(o => o.id !== id);
-            guardarEstado();
-            render();
+            const objetivo = state.objetivosAhorro.find(o => o.id === id);
+            if (objetivo && confirm(`¿Seguro que queres eliminar o obxectivo "${objetivo.nombre}"?`)) {
+                state.objetivosAhorro = state.objetivosAhorro.filter(o => o.id !== id);
+                guardarEstado();
+                render();
+            }
         }
 
         function anadirAhorroObjetivo(objetivoId, monto) {
@@ -1970,17 +2022,19 @@ function editarCuenta(id) {
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <span class="text-red-400 font-bold">${parseFloat(gasto.monto).toFixed(2)}€</span>
-                                                <button 
+                                               <button 
                                                     onclick="editarGasto(${gasto.id})"
                                                     class="delete-btn text-blue-500 hover:text-blue-400 transition-colors"
                                                     title="Editar"
+                                                    aria-label="Editar gasto ${gasto.descripcion}"
                                                 >
                                                     ✏️
                                                 </button>
-                                                <button 
+                                               <button 
                                                     onclick="eliminarGasto(${gasto.id})"
                                                     class="delete-btn text-red-500 hover:text-red-400 transition-colors"
                                                     title="Eliminar"
+                                                    aria-label="Eliminar gasto ${gasto.descripcion}"
                                                 >
                                                     ❌
                                                 </button>
