@@ -1805,6 +1805,254 @@ function realizarTransferencia() {
 
             return { insights, recomendaciones };
         }
+        // ============================================
+// ANÁLISE INTELIXENTE AVANZADA
+// ============================================
+
+function detectarGastosRecurrentesPotenciales() {
+    const gastosPorDescripcion = {};
+    const umbralSimilitud = 0.8; // 80% similar
+    
+    // Agrupar gastos por descrición similar
+    state.gastos.forEach(gasto => {
+        if (gasto.esRecurrente) return; // Ignorar xa marcados como recorrentes
+        
+        const desc = gasto.descripcion.toLowerCase().trim();
+        const monto = parseFloat(gasto.monto);
+        
+        // Buscar similares
+        let encontrado = false;
+        for (const [key, datos] of Object.entries(gastosPorDescripcion)) {
+            const similitud = calcularSimilitud(desc, key);
+            if (similitud >= umbralSimilitud && Math.abs(datos.montoPromedio - monto) < 5) {
+                datos.gastos.push(gasto);
+                datos.montoPromedio = datos.gastos.reduce((s, g) => s + parseFloat(g.monto), 0) / datos.gastos.length;
+                encontrado = true;
+                break;
+            }
+        }
+        
+        if (!encontrado) {
+            gastosPorDescripcion[desc] = {
+                gastos: [gasto],
+                montoPromedio: monto
+            };
+        }
+    });
+    
+    // Filtrar os que aparecen 2+ veces
+    const potenciales = [];
+    for (const [desc, datos] of Object.entries(gastosPorDescripcion)) {
+        if (datos.gastos.length >= 2) {
+            // Calcular días entre gastos
+            const fechas = datos.gastos.map(g => new Date(g.fecha)).sort((a, b) => a - b);
+            const intervalos = [];
+            for (let i = 1; i < fechas.length; i++) {
+                const dias = Math.round((fechas[i] - fechas[i-1]) / (1000 * 60 * 60 * 24));
+                intervalos.push(dias);
+            }
+            
+            const intervaloPromedio = intervalos.reduce((s, i) => s + i, 0) / intervalos.length;
+            
+            // Se o intervalo é consistente (25-35 días = mensual)
+            if (intervaloPromedio >= 25 && intervaloPromedio <= 35) {
+                potenciales.push({
+                    descripcion: desc,
+                    monto: datos.montoPromedio,
+                    frecuencia: 'mensual',
+                    veces: datos.gastos.length,
+                    categoria: datos.gastos[0].categoria,
+                    cuentaId: datos.gastos[0].cuentaId
+                });
+            }
+        }
+    }
+    
+    return potenciales;
+}
+
+function calcularSimilitud(str1, str2) {
+    const len1 = str1.length;
+    const len2 = str2.length;
+    const maxLen = Math.max(len1, len2);
+    if (maxLen === 0) return 1.0;
+    
+    // Distancia de Levenshtein simplificada
+    let coincidencias = 0;
+    for (let i = 0; i < Math.min(len1, len2); i++) {
+        if (str1[i] === str2[i]) coincidencias++;
+    }
+    
+    return coincidencias / maxLen;
+}
+
+function analizarTendenciasAvanzado() {
+    const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
+    const gastosDelPeriodo = state.gastos.filter(g => {
+        const f = new Date(g.fecha);
+        return f >= inicioPeriodo && f <= finPeriodo;
+    });
+
+    if (gastosDelPeriodo.length === 0) {
+        return { 
+            insights: ['📊 Aínda non hai datos suficientes para analizar tendencias'], 
+            recomendaciones: [],
+            gastosPorDia: {}
+        };
+    }
+
+    // Gastos por día da semana
+    const gastosPorDia = {
+        0: { nombre: 'Domingo', total: 0, count: 0 },
+        1: { nombre: 'Luns', total: 0, count: 0 },
+        2: { nombre: 'Martes', total: 0, count: 0 },
+        3: { nombre: 'Mércores', total: 0, count: 0 },
+        4: { nombre: 'Xoves', total: 0, count: 0 },
+        5: { nombre: 'Venres', total: 0, count: 0 },
+        6: { nombre: 'Sábado', total: 0, count: 0 }
+    };
+    
+    gastosDelPeriodo.forEach(g => {
+        const dia = new Date(g.fecha).getDay();
+        gastosPorDia[dia].total += parseFloat(g.monto);
+        gastosPorDia[dia].count++;
+    });
+    
+    // Día con maior gasto
+    let diaMayorGasto = null;
+    let mayorGastoDia = 0;
+    Object.entries(gastosPorDia).forEach(([dia, datos]) => {
+        if (datos.total > mayorGastoDia) {
+            mayorGastoDia = datos.total;
+            diaMayorGasto = parseInt(dia);
+        }
+    });
+
+    // Gastos por categoría
+    const gastosPorCategoria = {};
+    gastosDelPeriodo.forEach(g => {
+        const cat = g.categoria || 'Outros';
+        gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + parseFloat(g.monto);
+    });
+    
+    let categoriaDominante = null;
+    let mayorGastoCat = 0;
+    Object.entries(gastosPorCategoria).forEach(([cat, monto]) => {
+        if (monto > mayorGastoCat) {
+            mayorGastoCat = monto;
+            categoriaDominante = cat;
+        }
+    });
+
+    // Media diaria
+    const totalGastado = gastosDelPeriodo.reduce((s, g) => s + parseFloat(g.monto), 0);
+    const mediaDiaria = totalGastado / gastosDelPeriodo.length;
+
+    // Insights
+    const insights = [];
+    if (diaMayorGasto !== null) {
+        insights.push(`📅 Os ${gastosPorDia[diaMayorGasto].nombre} gastas máis: ${mayorGastoDia.toFixed(2)}€`);
+    }
+    if (categoriaDominante) {
+        insights.push(`📊 A túa categoría dominante é "${categoriaDominante}": ${mayorGastoCat.toFixed(2)}€`);
+    }
+    insights.push(`💰 Media por gasto: ${mediaDiaria.toFixed(2)}€`);
+
+    // Recomendacións
+    const recomendaciones = [];
+    if (categoriaDominante && mayorGastoCat > 0) {
+        const ahorroPotencial = mayorGastoCat * 0.1;
+        recomendaciones.push(`💡 Reducindo un 10% en ${categoriaDominante} aforrarías ${ahorroPotencial.toFixed(2)}€`);
+    }
+    if (diaMayorGasto !== null && gastosPorDia[diaMayorGasto].count > 2) {
+        recomendaciones.push(`⚠️ Evita gastos non esenciais os ${gastosPorDia[diaMayorGasto].nombre}`);
+    }
+    
+    // Predicción fin de mes
+    const stats = calcularEstadisticas();
+    if (stats.diasTranscurridos > 0) {
+        const ritmoActual = totalGastado / stats.diasTranscurridos;
+        const proyeccionFinMes = ritmoActual * stats.diasTotalesPeriodo;
+        
+        if (proyeccionFinMes > stats.ingresoTotal && stats.ingresoTotal > 0) {
+            recomendaciones.push(`🚨 Ao ritmo actual, gastarás ${proyeccionFinMes.toFixed(2)}€ este mes (超 do orzamento)`);
+        } else if (stats.ingresoTotal > 0) {
+            const aforroEstimado = stats.ingresoTotal - proyeccionFinMes;
+            if (aforroEstimado > 0) {
+                recomendaciones.push(`✅ Ao ritmo actual, aforrarás ${aforroEstimado.toFixed(2)}€ este mes`);
+            }
+        }
+    }
+
+    return { insights, recomendaciones, gastosPorDia };
+}
+
+function mostrarDialogoRecurrentesSugeridos() {
+    const potenciales = detectarGastosRecurrentesPotenciales();
+    
+    if (potenciales.length === 0) {
+        mostrarToast('✨ Non detectamos gastos recorrentes novos', 'info');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div class="modal-content p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-white">🔍 Gastos Recorrentes Detectados</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-white text-2xl">×</button>
+            </div>
+            
+            <p class="text-gray-400 mb-4">Detectamos estes gastos que se repiten regularmente:</p>
+            
+            <div class="space-y-3 mb-6">
+                ${potenciales.map((p, index) => `
+                    <div class="bg-black/30 rounded-xl p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1">
+                                <p class="text-white font-semibold">${p.descripcion}</p>
+                                <p class="text-gray-400 text-sm">${p.categoria} - Aparece ${p.veces} veces</p>
+                            </div>
+                            <p class="text-yellow-400 font-bold text-lg">${p.monto.toFixed(2)}€</p>
+                        </div>
+                        <button 
+                            onclick="
+                                const nombre = '${p.descripcion.replace(/'/g, "\\'")}';
+                                state.gastosRecurrentes.push({
+                                    nombre: nombre,
+                                    monto: ${p.monto},
+                                    categoria: '${p.categoria}',
+                                    cuentaId: ${p.cuentaId},
+                                    diaPago: null,
+                                    id: Date.now() + ${index}
+                                });
+                                guardarEstado();
+                                mostrarToast('✅ Engadido como recorrente', 'success');
+                                this.closest('.modal-overlay').remove();
+                                render();
+                            "
+                            class="btn-neon bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-2 rounded-xl font-bold w-full mt-2"
+                        >
+                            ➕ Engadir como Recorrente
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <button 
+                onclick="this.closest('.modal-overlay').remove()"
+                class="btn-neon bg-gradient-to-r from-gray-600 to-gray-700 px-6 py-3 rounded-xl font-bold w-full"
+            >
+                ❌ Pechar
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
         function cambiarVista(nuevaVista) {
             // Actualizar clases active en navegación
             document.querySelectorAll('.nav-item').forEach(item => {
@@ -2607,149 +2855,198 @@ function deshacer() {
                 `;
             }
             // VISTA DE ESTADÍSTICAS (TODO O TEU CÓDIGO)
-            else if (state.vista === 'estadisticas') {
-                const datosGrafico = obtenerDatosGraficoPeriodo();
+       else if (state.vista === 'estadisticas') {
+    const datosGrafico = obtenerDatosGraficoPeriodo();
+    const analisis = analizarTendenciasAvanzado();
+    
+    html += `
+        <div class="space-y-8">
+            <!-- Insights & Recomendacións -->
+            <div class="card-neon rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-white">🧠 Insights & Tendencias</h2>
+                    <button 
+                        onclick="mostrarDialogoRecurrentesSugeridos()"
+                        class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 rounded-xl font-bold text-sm"
+                    >
+                        🔍 Detectar Recorrentes
+                    </button>
+                </div>
                 
-                html += `
-                    <div class="space-y-8">
-                        <!-- Información del Período -->
-                        <div class="card-neon rounded-2xl p-6">
-                            <h2 class="text-2xl font-bold mb-4 text-white">📅 Período Actual</h2>
-                            <p class="text-gray-400">
-                                Do <span class="text-white font-semibold">${stats.inicioPeriodo.toLocaleDateString('gl-ES')}</span> 
-                                ao <span class="text-white font-semibold">${stats.finPeriodo.toLocaleDateString('gl-ES')}</span>
-                            </p>
-                            <div class="grid grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <p class="text-gray-400 text-sm">Días transcurridos</p>
-                                    <p class="text-2xl font-bold text-blue-400">${stats.diasTranscurridos}</p>
+                ${analisis.insights.length > 0 ? `
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-white mb-3">💡 Insights</h3>
+                        <div class="space-y-2">
+                            ${analisis.insights.map(insight => `
+                                <div class="bg-black/30 rounded-xl p-3">
+                                    <p class="text-cyan-400">${insight}</p>
                                 </div>
-                                <div>
-                                    <p class="text-gray-400 text-sm">Días restantes</p>
-                                    <p class="text-2xl font-bold text-yellow-400">${stats.diasRestantes}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Gráfico de Pastel -->
-                        <div class="card-neon rounded-2xl p-6">
-                            <h2 class="text-2xl font-bold mb-6 text-white">📊 Distribución de Gastos por Categoría</h2>
-                            ${datosGrafico.length > 0 ? `
-                                <canvas id="pieChart" width="400" height="400"></canvas>
-                                <div class="mt-6 space-y-3">
-                                    <h3 class="text-lg font-bold text-white mb-3">Desglose por Categoría</h3>
-                                    ${datosGrafico.map(dato => {
-                                        const total = datosGrafico.reduce((sum, d) => sum + d.valor, 0);
-                                        const porcentaje = (dato.valor / total * 100).toFixed(1);
-                                        return `
-                                            <div class="flex justify-between items-center bg-black/30 rounded-xl p-3">
-                                                <div class="flex items-center gap-3 flex-1">
-                                                    <div 
-                                                        class="w-4 h-4 rounded"
-                                                        style="background-color: ${obtenerColorCategoria(dato.nombre)}"
-                                                    ></div>
-                                                    <span class="text-white font-semibold">${dato.nombre}</span>
-                                                    <span class="text-gray-400 text-sm">(${porcentaje}%)</span>
-                                                </div>
-                                                <span class="text-white font-bold">${dato.valor.toFixed(2)}€</span>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                    <div class="border-t border-purple-500/30 pt-3 flex justify-between items-center">
-                                        <span class="text-gray-300 font-bold">Total Gastos:</span>
-                                        <span class="text-red-400 font-bold text-xl">${datosGrafico.reduce((sum, d) => sum + d.valor, 0).toFixed(2)}€</span>
-                                    </div>
-                                </div>
-                            ` : '<p class="text-gray-400 text-center py-8">Non hai datos suficientes para mostrar o gráfico</p>'}
-                        </div>
-
-                        <!-- Progreso del Período -->
-                        <div class="card-neon rounded-2xl p-6">
-                            <h3 class="text-xl font-bold text-white mb-4">📈 Progreso do Período</h3>
-                            <div class="mb-4">
-                                <div class="flex justify-between text-sm mb-2">
-                                    <span class="text-gray-400">Gastaches o ${stats.porcentajeGastado.toFixed(1)}% dos teus ingresos</span>
-                                    <span class="text-white font-semibold">${stats.totalGastos.toFixed(2)}€ / ${stats.ingresoTotal.toFixed(2)}€</span>
-                                </div>
-                                <div class="w-full bg-gray-700 rounded-full h-4">
-                                    <div 
-                                        class="h-4 rounded-full transition-all duration-500 ${stats.porcentajeGastado > 80 ? 'bg-red-500' : stats.porcentajeGastado > 50 ? 'bg-yellow-500' : 'bg-green-500'}"
-                                        style="width: ${Math.min(stats.porcentajeGastado, 100)}%"
-                                    ></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Todos los Gastos del Período -->
-                        <div class="card-neon rounded-2xl p-6">
-                            <h3 class="text-xl font-bold text-white mb-4">📊 Todos os Gastos do Período</h3>
-                            ${state.gastos.length > 0 ? `
-                                <div class="space-y-2 max-h-96 overflow-y-auto">
-                                    ${state.gastos.slice().reverse().map(gasto => {
-                                        const fecha = new Date(gasto.fecha);
-                                        const cuenta = state.cuentas.find(c => c.id === gasto.cuentaId);
-                                        const editando = state.editando && state.editando.tipo === 'gasto' && state.editando.id === gasto.id;
-                                        
-                                        if (editando) {
-                                            return `
-                                                <div class="bg-black/30 rounded-xl p-3">
-                                                    <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
-                                                        <input type="text" id="edit-desc-${gasto.id}" value="${gasto.descripcion}" class="input-neon px-2 py-1 rounded text-white text-sm" placeholder="Descripción" />
-                                                        <input type="number" step="0.01" min="0" id="edit-monto-${gasto.id}" value="${gasto.monto}" class="input-neon px-2 py-1 rounded text-white text-sm" />
-                                                        <select id="edit-cat-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
-                                                            ${state.categorias.map(cat => `<option value="${cat}" ${gasto.categoria === cat ? 'selected' : ''}>${cat}</option>`).join('')}
-                                                        </select>
-                                                        <select id="edit-cuenta-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
-                                                            ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
-                                                        </select>
-                                                        <div class="flex gap-1">
-                                                            <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
-                                                            <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            `;
-                                        }
-                                        
-                                        return `
-                                            <div class="item-hover flex justify-between items-center bg-black/30 rounded-xl p-3">
-                                                <div class="flex-1">
-                                                    <div class="flex items-center gap-2">
-                                                        <div 
-                                                            class="w-3 h-3 rounded-full"
-                                                            style="background-color: ${obtenerColorCategoria(gasto.categoria || 'Outros')}"
-                                                        ></div>
-                                                        <span class="text-white font-semibold">${gasto.descripcion}</span>
-                                                        ${gasto.esRecurrente ? '<span class="text-xs bg-purple-600 px-2 py-1 rounded">Recorrente</span>' : ''}
-                                                    </div>
-                                                    <p class="text-gray-400 text-xs mt-1">${fecha.toLocaleDateString('gl-ES')} - ${gasto.categoria || 'Outros'} - ${cuenta ? cuenta.nombre : 'Sen conta'}</p>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-red-400 font-bold">${parseFloat(gasto.monto).toFixed(2)}€</span>
-                                                    <button 
-                                                        onclick="editarGasto(${gasto.id})"
-                                                        class="delete-btn text-blue-500 hover:text-blue-400 transition-colors"
-                                                        title="Editar"
-                                                    >
-                                                        ✏️
-                                                    </button>
-                                                    <button 
-                                                        onclick="eliminarGasto(${gasto.id})"
-                                                        class="delete-btn text-red-500 hover:text-red-400 transition-colors"
-                                                        title="Eliminar"
-                                                    >
-                                                        ❌
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            ` : '<p class="text-gray-400 text-center py-4">Non hai gastos rexistrados neste período</p>'}
+                            `).join('')}
                         </div>
                     </div>
-                `;
-            }
+                ` : ''}
+                
+                ${analisis.recomendaciones.length > 0 ? `
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-3">🎯 Recomendacións</h3>
+                        <div class="space-y-2">
+                            ${analisis.recomendaciones.map(rec => `
+                                <div class="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-xl p-3 border border-purple-500/30">
+                                    <p class="text-white">${rec}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+
+            <!-- Gráfico por Día da Semana -->
+            ${Object.keys(analisis.gastosPorDia).length > 0 ? `
+                <div class="card-neon rounded-2xl p-6">
+                    <h2 class="text-2xl font-bold mb-6 text-white">📅 Gastos por Día da Semana</h2>
+                    <canvas id="barChart" width="400" height="250"></canvas>
+                </div>
+            ` : ''}
+
+            <!-- Información del Período -->
+            <div class="card-neon rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-4 text-white">📅 Período Actual</h2>
+                <p class="text-gray-400">
+                    Do <span class="text-white font-semibold">${stats.inicioPeriodo.toLocaleDateString('gl-ES')}</span> 
+                    ao <span class="text-white font-semibold">${stats.finPeriodo.toLocaleDateString('gl-ES')}</span>
+                </p>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="text-gray-400 text-sm">Días transcorridos</p>
+                        <p class="text-2xl font-bold text-blue-400">${stats.diasTranscurridos}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Días restantes</p>
+                        <p class="text-2xl font-bold text-yellow-400">${stats.diasRestantes}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Pastel -->
+            <div class="card-neon rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-6 text-white">📊 Distribución de Gastos por Categoría</h2>
+                ${datosGrafico.length > 0 ? `
+                    <canvas id="pieChart" width="400" height="400"></canvas>
+                    <div class="mt-6 space-y-3">
+                        <h3 class="text-lg font-bold text-white mb-3">Desglose por Categoría</h3>
+                        ${datosGrafico.map(dato => {
+                            const total = datosGrafico.reduce((sum, d) => sum + d.valor, 0);
+                            const porcentaje = (dato.valor / total * 100).toFixed(1);
+                            return `
+                                <div class="flex justify-between items-center bg-black/30 rounded-xl p-3">
+                                    <div class="flex items-center gap-3 flex-1">
+                                        <div 
+                                            class="w-4 h-4 rounded"
+                                            style="background-color: ${obtenerColorCategoria(dato.nombre)}"
+                                        ></div>
+                                        <span class="text-white font-semibold">${dato.nombre}</span>
+                                        <span class="text-gray-400 text-sm">(${porcentaje}%)</span>
+                                    </div>
+                                    <span class="text-white font-bold">${dato.valor.toFixed(2)}€</span>
+                                </div>
+                            `;
+                        }).join('')}
+                        <div class="border-t border-purple-500/30 pt-3 flex justify-between items-center">
+                            <span class="text-gray-300 font-bold">Total Gastos:</span>
+                            <span class="text-red-400 font-bold text-xl">${datosGrafico.reduce((sum, d) => sum + d.valor, 0).toFixed(2)}€</span>
+                        </div>
+                    </div>
+                ` : '<p class="text-gray-400 text-center py-8">Non hai datos suficientes para mostrar o gráfico</p>'}
+            </div>
+
+            <!-- Progreso del Período -->
+            <div class="card-neon rounded-2xl p-6">
+                <h3 class="text-xl font-bold text-white mb-4">📈 Progreso do Período</h3>
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-gray-400">Gastaches o ${stats.porcentajeGastado.toFixed(1)}% dos teus ingresos</span>
+                        <span class="text-white font-semibold">${stats.totalGastos.toFixed(2)}€ / ${stats.ingresoTotal.toFixed(2)}€</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-4">
+                        <div 
+                            class="h-4 rounded-full transition-all duration-500 ${stats.porcentajeGastado > 80 ? 'bg-red-500' : stats.porcentajeGastado > 50 ? 'bg-yellow-500' : 'bg-green-500'}"
+                            style="width: ${Math.min(stats.porcentajeGastado, 100)}%"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Todos los Gastos del Período -->
+            <div class="card-neon rounded-2xl p-6">
+                <h3 class="text-xl font-bold text-white mb-4">📊 Todos os Gastos do Período</h3>
+                ${state.gastos.length > 0 ? `
+                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                        ${state.gastos.slice().reverse().map(gasto => {
+                            const fecha = new Date(gasto.fecha);
+                            const cuenta = state.cuentas.find(c => c.id === gasto.cuentaId);
+                            const editando = state.editando && state.editando.tipo === 'gasto' && state.editando.id === gasto.id;
+                            
+                            if (editando) {
+                                return `
+                                    <div class="bg-black/30 rounded-xl p-3">
+                                        <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                                            <input type="text" id="edit-desc-${gasto.id}" value="${gasto.descripcion}" class="input-neon px-2 py-1 rounded text-white text-sm" placeholder="Descripción" />
+                                            <input type="number" step="0.01" min="0" id="edit-monto-${gasto.id}" value="${gasto.monto}" class="input-neon px-2 py-1 rounded text-white text-sm" />
+                                            <select id="edit-cat-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
+                                                ${state.categorias.map(cat => `<option value="${cat}" ${gasto.categoria === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                                            </select>
+                                            <select id="edit-cuenta-${gasto.id}" class="input-neon px-2 py-1 rounded text-white text-sm">
+                                                ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
+                                            </select>
+                                            <div class="flex gap-1">
+                                                <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
+                                                <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                            
+                            return `
+                                <div class="item-hover flex justify-between items-center bg-black/30 rounded-xl p-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <div 
+                                                class="w-3 h-3 rounded-full"
+                                                style="background-color: ${obtenerColorCategoria(gasto.categoria || 'Outros')}"
+                                            ></div>
+                                            <span class="text-white font-semibold">${gasto.descripcion}</span>
+                                            ${gasto.esRecurrente ? '<span class="text-xs bg-purple-600 px-2 py-1 rounded">Recorrente</span>' : ''}
+                                        </div>
+                                        <p class="text-gray-400 text-xs mt-1">${fecha.toLocaleDateString('gl-ES')} - ${gasto.categoria || 'Outros'} - ${cuenta ? cuenta.nombre : 'Sen conta'}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-red-400 font-bold">${parseFloat(gasto.monto).toFixed(2)}€</span>
+                                        <button 
+                                            onclick="editarGasto(${gasto.id})"
+                                            class="delete-btn text-blue-500 hover:text-blue-400 transition-colors"
+                                            title="Editar"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button 
+                                            onclick="eliminarGasto(${gasto.id})"
+                                            class="delete-btn text-red-500 hover:text-red-400 transition-colors"
+                                            title="Eliminar"
+                                        >
+                                            ❌
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : '<p class="text-gray-400 text-center py-4">Non hai gastos rexistrados neste período</p>'}
+            </div>
+        </div>
+    `;
+}
+           
           // VISTA DE OBXETIVOS (TODO O TEU CÓDIGO)
             else if (state.vista === 'objetivos') {
                 html += `
@@ -3518,52 +3815,103 @@ function deshacer() {
                 lucide.createIcons();
             }
 
-            // Crear gráficos si estamos en la vista de estadísticas
-            if (state.vista === 'estadisticas') {
-                setTimeout(() => {
-                    const datosGrafico = obtenerDatosGraficoPeriodo();
-                    if (datosGrafico.length > 0) {
-                        const pieCtx = document.getElementById('pieChart');
-                        if (pieCtx) {
-                            new Chart(pieCtx, {
-                                type: 'pie',
-                                data: {
-                                    labels: datosGrafico.map(d => d.nombre),
-                                    datasets: [{
-                                        data: datosGrafico.map(d => d.valor),
-                                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
-                                        borderWidth: 2,
-                                        borderColor: '#0f0f23'
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: true,
-                                    plugins: {
-                                        legend: {
-                                            position: 'bottom',
-                                            labels: {
-                                                color: '#ffffff',
-                                                padding: 15,
-                                                font: {
-                                                    size: 12
-                                                }
-                                            }
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: function(context) {
-                                                    return context.label + ': ' + context.parsed.toFixed(2) + '€';
-                                                }
-                                            }
-                                        }
+           // Crear gráficos si estamos en la vista de estadísticas
+if (state.vista === 'estadisticas') {
+    setTimeout(() => {
+        const datosGrafico = obtenerDatosGraficoPeriodo();
+        const analisis = analizarTendenciasAvanzado();
+        
+        // Gráfico de pastel
+        if (datosGrafico.length > 0) {
+            const pieCtx = document.getElementById('pieChart');
+            if (pieCtx) {
+                new Chart(pieCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: datosGrafico.map(d => d.nombre),
+                        datasets: [{
+                            data: datosGrafico.map(d => d.valor),
+                            backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
+                            borderWidth: 2,
+                            borderColor: '#0f0f23'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#ffffff',
+                                    padding: 15,
+                                    font: { size: 12 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed.toFixed(2) + '€';
                                     }
                                 }
-                            });
+                            }
                         }
                     }
-                }, 100);
+                });
             }
+        }
+        
+        // Gráfico de barras por día da semana
+        if (Object.keys(analisis.gastosPorDia).length > 0) {
+            const barCtx = document.getElementById('barChart');
+            if (barCtx) {
+                const labels = Object.values(analisis.gastosPorDia).map(d => d.nombre);
+                const data = Object.values(analisis.gastosPorDia).map(d => d.total);
+                
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Gasto Total (€)',
+                            data: data,
+                            backgroundColor: 'rgba(131, 56, 236, 0.8)',
+                            borderColor: '#8338EC',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#ffffff' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#ffffff' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#ffffff' }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Total: ' + context.parsed.y.toFixed(2) + '€';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }, 100);
+}
          
          // NOVO: Mostrar/ocultar botón deshacer
             const btnDeshacer = document.getElementById('btn-deshacer');
