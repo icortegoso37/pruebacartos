@@ -258,6 +258,56 @@
         .icon-target { stroke: url(#gradient-orange); }
         .icon-calendar { stroke: url(#gradient-red); }
         .icon-settings { stroke: url(#gradient-cyan); }
+        /* TOASTS */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, #8338EC, #FF006E);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            z-index: 10000;
+            box-shadow: 0 4px 20px rgba(131, 56, 236, 0.5);
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .toast.success {
+            background: linear-gradient(135deg, #06FFA5, #00D4FF);
+        }
+        
+        .toast.error {
+            background: linear-gradient(135deg, #FF006E, #FF4D4D);
+        }
+        
+        .toast.warning {
+            background: linear-gradient(135deg, #FFBE0B, #FF6B35);
+        }
+        /* Animación de vistas */
+        #app > div {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body class="text-white">
@@ -1027,7 +1077,7 @@
                     id: Date.now()
                 };
                 
-                state.gastos.push(nuevoGasto);
+              state.gastos.push(nuevoGasto);
                 recalcularSaldosCuentas();
                 
                 if (document.getElementById('gasto-monto')) {
@@ -1037,21 +1087,26 @@
                 guardarEstado();
                 verificarAlertas();
                 
+                mostrarToast(`✅ Gasto de ${monto.toFixed(2)}€ engadido`, 'success');
+                
                 const stats = calcularEstadisticas();
                 if (stats.gastoPorDiaRestante > 0 && state.objetivosAhorro.length > 0) {
                     mostrarDialogoAhorroObjetivo();
                 }
                 
                 render();
+            } else {
+                mostrarToast('❌ Introduce un monto válido', 'error');
             }
         }
 
-        function eliminarGasto(id) {
+      function eliminarGasto(id) {
             const gasto = state.gastos.find(g => g.id === id);
-            if (gasto) {
+            if (gasto && confirm(`🗑️ Seguro que queres eliminar o gasto de ${gasto.monto.toFixed(2)}€ (${gasto.descripcion})?`)) {
                 state.gastos = state.gastos.filter(g => g.id !== id);
                 recalcularSaldosCuentas();
                 guardarEstado();
+                mostrarToast('✅ Gasto eliminado', 'success');
                 render();
             }
         }
@@ -1080,6 +1135,7 @@
                 state.editando = null;
                 recalcularSaldosCuentas();
                 guardarEstado();
+                mostrarToast('✅ Gasto actualizado', 'success');
                 render();
             }
         }
@@ -1109,16 +1165,22 @@
                 document.getElementById('ingreso-monto').value = '';
                 
                 guardarEstado();
+                mostrarToast(`✅ Ingreso de ${parseFloat(monto).toFixed(2)}€ engadido`, 'success');
+                render();
+            } else {
+                mostrarToast('❌ Introduce un monto válido', 'error');
+            }
                 render();
             }
         }
 
-        function eliminarIngreso(id) {
+      function eliminarIngreso(id) {
             const ingreso = state.ingresos.find(i => i.id === id);
-            if (ingreso) {
+            if (ingreso && confirm(`🗑️ Seguro que queres eliminar o ingreso de ${ingreso.monto.toFixed(2)}€ (${ingreso.descripcion})?`)) {
                 state.ingresos = state.ingresos.filter(i => i.id !== id);
                 recalcularSaldosCuentas();
                 guardarEstado();
+                mostrarToast('✅ Ingreso eliminado', 'success');
                 render();
             }
         }
@@ -1146,6 +1208,7 @@
                 state.editando = null;
                 recalcularSaldosCuentas();
                 guardarEstado();
+                mostrarToast('✅ Ingreso actualizado', 'success');
                 render();
             }
         }
@@ -1297,6 +1360,7 @@ function realizarTransferencia() {
             
             recalcularSaldosCuentas();
             guardarEstado();
+            mostrarToast(`✅ Transferencia de ${monto.toFixed(2)}€ realizada`, 'success');
             render();
         }
         function editarCuenta(id) {
@@ -1706,7 +1770,24 @@ function realizarTransferencia() {
             render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
+function mostrarToast(mensaje, tipo = 'success') {
+            // Eliminar toasts anteriores
+            document.querySelectorAll('.toast').forEach(t => t.remove());
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            toast.textContent = mensaje;
+            document.body.appendChild(toast);
+            
+            // Mostrar
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Ocultar e eliminar
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
         function obtenerDatosGraficoPeriodo() {
             const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
             
@@ -1830,16 +1911,22 @@ function realizarTransferencia() {
                         <p class="text-gray-400 text-sm mb-4">💡 Escribe directo: "supermercado 30" ou "gasolina 45.50"</p>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <input 
+                           <input 
                                 type="text"
                                 id="gasto-texto"
                                 class="input-neon px-4 py-3 rounded-xl text-white md:col-span-1"
                                 placeholder="ex: mercadona 23.50"
                                 oninput="
                                     const parseado = parsearTextoInteligente(this.value);
+                                    const btn = document.getElementById('btn-agregar-gasto');
                                     if (parseado.monto) {
                                         document.getElementById('gasto-monto').value = parseado.monto;
                                         document.getElementById('gasto-categoria').value = parseado.categoria;
+                                        btn.disabled = false;
+                                        btn.style.opacity = '1';
+                                    } else {
+                                        btn.disabled = true;
+                                        btn.style.opacity = '0.5';
                                     }
                                 "
                                 onkeyup="if(event.key==='Enter') agregarGasto()"
@@ -1852,6 +1939,7 @@ function realizarTransferencia() {
                             </select>
                             <button 
                                 onclick="agregarGasto()"
+                                id="btn-agregar-gasto"
                                 class="btn-neon bg-gradient-to-r from-pink-600 to-red-600 px-6 py-3 rounded-xl font-bold"
                             >
                                 ➕ Engadir
