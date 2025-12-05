@@ -18,9 +18,8 @@
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     
-    <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <style>
         :root {
@@ -606,24 +605,52 @@
             return { inicioPeriodo, finPeriodo };
         }
 
-        function calcularSaldoCuenta(cuentaId) {
+        function calcularSaldoCuenta(cuentaId, hastaFecha = null) {
             const cuenta = state.cuentas.find(c => c.id === cuentaId);
             if (!cuenta) return 0;
             
             let saldo = parseFloat(cuenta.saldoInicial || 0);
             
+            // Ordenar transacciones por fecha
+            const fechaLimite = hastaFecha ? new Date(hastaFecha) : new Date('2099-12-31');
+            
+            // Crear array con todas las transacciones
+            const transacciones = [];
+            
             state.ingresos.forEach(i => {
-                if (i.cuentaId === cuentaId) saldo += parseFloat(i.monto);
+                if (i.cuentaId === cuentaId) {
+                    transacciones.push({ fecha: new Date(i.fecha), monto: parseFloat(i.monto), tipo: 'ingreso' });
+                }
             });
             
             state.gastos.forEach(g => {
-                if (g.cuentaId === cuentaId) saldo -= parseFloat(g.monto);
+                if (g.cuentaId === cuentaId) {
+                    transacciones.push({ fecha: new Date(g.fecha), monto: parseFloat(g.monto), tipo: 'gasto' });
+                }
             });
             
             state.ajustes.forEach(a => {
                 if (a.cuentaId === cuentaId) {
                     const monto = parseFloat(a.monto);
-                    saldo += (a.tipo === 'positivo' ? monto : -monto);
+                    transacciones.push({ 
+                        fecha: new Date(a.fecha), 
+                        monto: monto, 
+                        tipo: a.tipo === 'positivo' ? 'ajuste_positivo' : 'ajuste_negativo' 
+                    });
+                }
+            });
+            
+            // Ordenar por fecha
+            transacciones.sort((a, b) => a.fecha - b.fecha);
+            
+            // Aplicar transacciones en orden cronológico
+            transacciones.forEach(t => {
+                if (t.fecha <= fechaLimite) {
+                    if (t.tipo === 'ingreso' || t.tipo === 'ajuste_positivo') {
+                        saldo += t.monto;
+                    } else {
+                        saldo -= t.monto;
+                    }
                 }
             });
             
@@ -636,27 +663,51 @@
             });
         }
 
-        function procesarGastosRecurrentes() {
+       function procesarGastosRecurrentes() {
             const { inicioPeriodo } = obtenerPeriodoPagoActual();
             const inicioPeriodoStr = inicioPeriodo.toISOString().split('T')[0];
             
+            // Si ya procesamos este período, salir
             if (state.ultimaActualizacionRecurrentes === inicioPeriodoStr) return;
             
+            // Verificar si ya existen gastos recurrentes para este período
+            const yaExistenRecurrentes = state.gastos.some(g => 
+                g.esRecurrente && 
+                new Date(g.fecha).toISOString().split('T')[0] === inicioPeriodoStr
+            );
+            
+            if (yaExistenRecurrentes) {
+                state.ultimaActualizacionRecurrentes = inicioPeriodoStr;
+                guardarEstado();
+                return;
+            }
+            
+            // Añadir gastos recurrentes solo si no existen ya
             state.gastosRecurrentes.forEach(gr => {
-                state.gastos.push({
-                    descripcion: `${gr.nombre} (Recorrente)`,
-                    monto: gr.monto,
-                    categoria: gr.categoria,
-                    cuentaId: gr.cuentaId || state.cuentas[0]?.id || 1,
-                    fecha: inicioPeriodo.toISOString(),
-                    id: Date.now() + Math.random(),
-                    esRecurrente: true
-                });
+                const gastoId = `recurrente-${gr.id}-${inicioPeriodoStr}`;
+                
+                // Verificar que no existe ya este gasto específico
+                const existe = state.gastos.some(g => g.idRecurrente === gastoId);
+                
+                if (!existe) {
+                    state.gastos.push({
+                        descripcion: `${gr.nombre} (Recorrente)`,
+                        monto: gr.monto,
+                        categoria: gr.categoria,
+                        cuentaId: gr.cuentaId || state.cuentas[0]?.id || 1,
+                        fecha: inicioPeriodo.toISOString(),
+                        id: Date.now() + Math.random(),
+                        esRecurrente: true,
+                        idRecurrente: gastoId,
+                        gastoRecurrenteId: gr.id
+                    });
+                }
             });
             
             state.ultimaActualizacionRecurrentes = inicioPeriodoStr;
             recalcularSaldosCuentas();
             guardarEstado();
+           
             // Confirmar sueldo ao inicio do período
             const periodoKey = inicioPeriodoStr;
             if (!state.sueldoConfirmadoPeriodoActual) {
@@ -1448,12 +1499,128 @@ function editarCuenta(id) {
                 }
             }
         }
-        function eliminarCuenta(id) {
+           function eliminarCuenta(id) {
             if (state.cuentas.length > 1) {
                 state.cuentas = state.cuentas.filter(c => c.id !== id);
                 guardarEstado();
                 render();
             }
+        }
+     // Transferencias entre cuentas
+        function mostrarModalTransferencia() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.onclick = (e) => { if (e.target === modal) cerrarModal(); };
+            
+            modal.innerHTML = `
+                <div class="modal-content p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-white">💸 Transferir entre Contas</h2>
+                        <button onclick="cerrarModal()" class="text-gray-400 hover:text-white text-2xl">×</button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-300 block mb-2">Desde:</label>
+                            <select id="transfer-desde" class="input-neon w-full px-4 py-3 rounded-xl text-white">
+                                ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre} (${c.saldo.toFixed(2)}€)</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 block mb-2">Hacia:</label>
+                            <select id="transfer-hacia" class="input-neon w-full px-4 py-3 rounded-xl text-white">
+                                ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre} (${c.saldo.toFixed(2)}€)</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 block mb-2">Monto (€):</label>
+                            <input 
+                                type="number"
+                                id="transfer-monto"
+                                step="0.01"
+                                min="0.01"
+                                class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 block mb-2">Nota (opcional):</label>
+                            <input 
+                                type="text"
+                                id="transfer-nota"
+                                class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                                placeholder="Ej: Pago efectivo"
+                            />
+                        </div>
+                        
+                        <button 
+                            onclick="ejecutarTransferencia()"
+                            class="btn-neon w-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold"
+                        >
+                            ✅ Transferir
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function ejecutarTransferencia() {
+            const desdeId = parseInt(document.getElementById('transfer-desde').value);
+            const haciaId = parseInt(document.getElementById('transfer-hacia').value);
+            const monto = document.getElementById('transfer-monto').value;
+            const nota = document.getElementById('transfer-nota').value || 'Transferencia entre contas';
+            
+            // Validaciones
+            if (desdeId === haciaId) {
+                mostrarError('Non podes transferir á mesma conta');
+                return;
+            }
+            
+            if (!validarMonto(monto, 'O monto da transferencia')) {
+                return;
+            }
+            
+            const montoNum = parseFloat(monto);
+            const cuentaDesde = state.cuentas.find(c => c.id === desdeId);
+            
+            if (!cuentaDesde || cuentaDesde.saldo < montoNum) {
+                mostrarError('Saldo insuficiente na conta de orixe');
+                return;
+            }
+            
+            // Crear ajuste negativo en cuenta origen
+            if (!state.ajustes) state.ajustes = [];
+            state.ajustes.push({
+                descripcion: `${nota} → ${state.cuentas.find(c => c.id === haciaId)?.nombre}`,
+                monto: montoNum,
+                tipo: 'negativo',
+                cuentaId: desdeId,
+                fecha: new Date().toISOString(),
+                id: Date.now(),
+                esTransferencia: true
+            });
+            
+            // Crear ajuste positivo en cuenta destino
+            state.ajustes.push({
+                descripcion: `${nota} ← ${cuentaDesde.nombre}`,
+                monto: montoNum,
+                tipo: 'positivo',
+                cuentaId: haciaId,
+                fecha: new Date().toISOString(),
+                id: Date.now() + 1,
+                esTransferencia: true
+            });
+            
+            recalcularSaldosCuentas();
+            guardarEstado();
+            cerrarModal();
+            mostrarExito(`Transferencia realizada: ${montoNum.toFixed(2)}€`);
+            render();
         }
 
         function mostrarDialogoAhorroObjetivo() {
@@ -2217,8 +2384,16 @@ function editarCuenta(id) {
                     </div>
 
                     <!-- Estado de Cuentas + Gestión -->
-                    <div class="card-neon rounded-2xl p-6 mb-8">
-                      <h3 class="text-xl font-bold text-white mb-4">💳 Estado e Xestión de Contas</h3>
+                   <div class="card-neon rounded-2xl p-6 mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-white">💳 Estado e Xestión de Contas</h3>
+                            <button 
+                                onclick="mostrarModalTransferencia()"
+                                class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 rounded-xl font-bold text-sm"
+                            >
+                                💸 Transferir
+                            </button>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                             ${state.cuentas.map(cuenta => {
                                 const editando = state.editando && state.editando.tipo === 'cuenta' && state.editando.id === cuenta.id;
@@ -3340,14 +3515,31 @@ function editarCuenta(id) {
                 lucide.createIcons();
             }
 
-            // Crear gráficos si estamos en la vista de estadísticas
+           // Crear gráficos si estamos en la vista de estadísticas (con lazy load)
             if (state.vista === 'estadisticas') {
                 setTimeout(() => {
                     const datosGrafico = obtenerDatosGraficoPeriodo();
                     if (datosGrafico.length > 0) {
                         const pieCtx = document.getElementById('pieChart');
                         if (pieCtx) {
-                            new Chart(pieCtx, {
+                            // Lazy load Chart.js solo cuando se necesita
+                            if (typeof Chart === 'undefined') {
+                                const script = document.createElement('script');
+                                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+                                script.onload = () => crearGraficoPastel(pieCtx, datosGrafico);
+                                document.head.appendChild(script);
+                            } else {
+                                crearGraficoPastel(pieCtx, datosGrafico);
+                            }
+                        }
+                    }
+                }, 100);
+            }
+        }
+
+        // Función separada para crear el gráfico
+        function crearGraficoPastel(ctx, datosGrafico) {
+            new Chart(ctx, {
                                 type: 'pie',
                                 data: {
                                     labels: datosGrafico.map(d => d.nombre),
