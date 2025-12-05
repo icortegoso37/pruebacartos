@@ -308,6 +308,16 @@
                 transform: translateY(0);
             }
         }
+        /* Animación botón deshacer */
+        #btn-deshacer:hover {
+            transform: scale(1.1) rotate(-15deg);
+            box-shadow: 0 6px 20px rgba(131, 56, 236, 0.7);
+        }
+
+        #btn-deshacer:active {
+            transform: scale(0.95);
+        }
+    </style>
     </style>
 </head>
 <body class="text-white">
@@ -420,21 +430,52 @@
                 </div>
             </div>
         </div>
+    </div>
+        </div>
+
+    <!-- Botón Flotante DESHACER -->
+    <button 
+        onclick="deshacer()"
+        id="btn-deshacer"
+        style="
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF006E, #8338EC);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(131, 56, 236, 0.5);
+            font-size: 28px;
+            cursor: pointer;
+            z-index: 9999;
+            transition: all 0.3s ease;
+            display: none;
+        "
+        title="Desfacer última acción"
+    >
+        ↩️
+    </button>
+
     <script>
       // Estado global (TODO O TEU CÓDIGO)
-        let state = {
-            diaCobro: localStorage.getItem('diaCobro') || '',
-            gastosRecurrentes: JSON.parse(localStorage.getItem('gastosRecurrentes') || '[]'),
-            gastos: JSON.parse(localStorage.getItem('gastos') || '[]'),
-            ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
-            ajustes: JSON.parse(localStorage.getItem('ajustes') || '[]'),
-            transferencias: JSON.parse(localStorage.getItem('transferencias') || '[]'),
-            objetivosAhorro: JSON.parse(localStorage.getItem('objetivosAhorro') || '[]'),
-            categorias: JSON.parse(localStorage.getItem('categorias') || '["Alimentación", "Transporte", "Entretenimiento", "Salud", "Hogar", "Ropa", "Outros"]'),
-            cuentas: JSON.parse(localStorage.getItem('cuentas') || '[{"id": 1, "nombre": "Conta Principal", "tipo": "banco", "saldoInicial": 0, "saldo": 0}]'),
-            alertasConfig: JSON.parse(localStorage.getItem('alertasConfig') || '{"diasParaCobro": 3, "porcentajeGastoMitadMes": 50, "alertaObjetivosEnRiesgo": true}'),
-            sueldoConfirmadoPeriodoActual: localStorage.getItem('sueldoConfirmadoPeriodoActual') || '', 
-            vista: 'principal',
+       let state = {
+    diaCobro: localStorage.getItem('diaCobro') || '',
+    gastosRecurrentes: JSON.parse(localStorage.getItem('gastosRecurrentes') || '[]'),
+    gastos: JSON.parse(localStorage.getItem('gastos') || '[]'),
+    ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
+    ajustes: JSON.parse(localStorage.getItem('ajustes') || '[]'),
+    transferencias: JSON.parse(localStorage.getItem('transferencias') || '[]'),
+    objetivosAhorro: JSON.parse(localStorage.getItem('objetivosAhorro') || '[]'),
+    categorias: JSON.parse(localStorage.getItem('categorias') || '["Alimentación", "Transporte", "Entretenimiento", "Salud", "Hogar", "Ropa", "Outros"]'),
+    cuentas: JSON.parse(localStorage.getItem('cuentas') || '[{"id": 1, "nombre": "Conta Principal", "tipo": "banco", "saldoInicial": 0, "saldo": 0}]'),
+    alertasConfig: JSON.parse(localStorage.getItem('alertasConfig') || '{"diasParaCobro": 3, "porcentajeGastoMitadMes": 50, "alertaObjetivosEnRiesgo": true}'),
+    sueldoConfirmadoPeriodoActual: localStorage.getItem('sueldoConfirmadoPeriodoActual') || '',
+    historialAcciones: [],
+    maxHistorial: 10,
+    vista: 'principal',
             alertasMostradas: [],
             ultimaActualizacionRecurrentes: localStorage.getItem('ultimaActualizacionRecurrentes') || '',
             editando: null,
@@ -1078,6 +1119,7 @@
                 };
                 
               state.gastos.push(nuevoGasto);
+                guardarAccion('agregarGasto', nuevoGasto);
                 recalcularSaldosCuentas();
                 
                 if (document.getElementById('gasto-monto')) {
@@ -1103,6 +1145,7 @@
       function eliminarGasto(id) {
             const gasto = state.gastos.find(g => g.id === id);
             if (gasto && confirm(`🗑️ Seguro que queres eliminar o gasto de ${gasto.monto.toFixed(2)}€ (${gasto.descripcion})?`)) {
+                guardarAccion('eliminarGasto', gasto);
                 state.gastos = state.gastos.filter(g => g.id !== id);
                 recalcularSaldosCuentas();
                 guardarEstado();
@@ -1120,6 +1163,10 @@
         }
 
       function guardarEdicionGasto(id) {
+          guardarAccion('editarGasto', {
+    id: id,
+    estadoAnterior: {...gasto}
+});
             const gasto = state.gastos.find(g => g.id === id);
             if (gasto) {
                 gasto.descripcion = document.getElementById(`edit-desc-${id}`).value;
@@ -1156,9 +1203,10 @@
             monto: parseFloat(monto),
             cuentaId,
             fecha: new Date().toISOString(),
-            id: Date.now()
+            id: Date.now()            
         });
-        
+        guardarAccion('agregarIngreso', state.ingresos[state.ingresos.length - 1]);
+     
         recalcularSaldosCuentas();
         
         document.getElementById('ingreso-descripcion').value = '';
@@ -1175,6 +1223,7 @@
             const ingreso = state.ingresos.find(i => i.id === id);
             if (ingreso && confirm(`🗑️ Seguro que queres eliminar o ingreso de ${ingreso.monto.toFixed(2)}€ (${ingreso.descripcion})?`)) {
                 state.ingresos = state.ingresos.filter(i => i.id !== id);
+                guardarAccion('eliminarIngreso', ingreso);
                 recalcularSaldosCuentas();
                 guardarEstado();
                 mostrarToast('✅ Ingreso eliminado', 'success');
@@ -1191,6 +1240,10 @@
         }
 
         function guardarEdicionIngreso(id) {
+            guardarAccion('editarIngreso', {
+    id: id,
+    estadoAnterior: {...ingreso}
+});
             const ingreso = state.ingresos.find(i => i.id === id);
             if (ingreso) {
                 ingreso.descripcion = document.getElementById(`edit-desc-${id}`).value;
@@ -1349,6 +1402,7 @@ function realizarTransferencia() {
                 fecha: new Date().toISOString(),
                 id: Date.now()
             });
+    guardarAccion('agregarTransferencia', state.transferencias[state.transferencias.length - 1]);
             
             document.getElementById('trans-origen').value = '';
             document.getElementById('trans-destino').value = '';
@@ -1785,6 +1839,81 @@ function mostrarToast(mensaje, tipo = 'success') {
                 setTimeout(() => toast.remove(), 300);
             }, 2500);
         }
+        function guardarAccion(tipo, datos) {
+    const accion = {
+        tipo: tipo,
+        datos: JSON.parse(JSON.stringify(datos)),
+        timestamp: Date.now()
+    };
+    
+    state.historialAcciones.push(accion);
+    
+    // Mantén só as últimas N accións
+    if (state.historialAcciones.length > state.maxHistorial) {
+        state.historialAcciones.shift();
+    }
+}
+
+function deshacer() {
+    if (state.historialAcciones.length === 0) {
+        mostrarToast('❌ Non hai accións para desfacer', 'warning');
+        return;
+    }
+    
+    const accion = state.historialAcciones.pop();
+    
+    switch(accion.tipo) {
+        case 'agregarGasto':
+            state.gastos = state.gastos.filter(g => g.id !== accion.datos.id);
+            mostrarToast('↩️ Gasto desfeito', 'success');
+            break;
+            
+        case 'eliminarGasto':
+            state.gastos.push(accion.datos);
+            mostrarToast('↩️ Gasto restaurado', 'success');
+            break;
+            
+        case 'agregarIngreso':
+            state.ingresos = state.ingresos.filter(i => i.id !== accion.datos.id);
+            mostrarToast('↩️ Ingreso desfeito', 'success');
+            break;
+            
+        case 'eliminarIngreso':
+            state.ingresos.push(accion.datos);
+            mostrarToast('↩️ Ingreso restaurado', 'success');
+            break;
+            
+        case 'agregarTransferencia':
+            state.transferencias = state.transferencias.filter(t => t.id !== accion.datos.id);
+            mostrarToast('↩️ Transferencia desfeita', 'success');
+            break;
+            
+        case 'eliminarTransferencia':
+            state.transferencias.push(accion.datos);
+            mostrarToast('↩️ Transferencia restaurada', 'success');
+            break;
+            
+        case 'editarGasto':
+            const gastoOriginal = state.gastos.find(g => g.id === accion.datos.id);
+            if (gastoOriginal) {
+                Object.assign(gastoOriginal, accion.datos.estadoAnterior);
+            }
+            mostrarToast('↩️ Edición desfeita', 'success');
+            break;
+            
+        case 'editarIngreso':
+            const ingresoOriginal = state.ingresos.find(i => i.id === accion.datos.id);
+            if (ingresoOriginal) {
+                Object.assign(ingresoOriginal, accion.datos.estadoAnterior);
+            }
+            mostrarToast('↩️ Edición desfeita', 'success');
+            break;
+    }
+    
+    recalcularSaldosCuentas();
+    guardarEstado();
+    render();
+}
         function obtenerDatosGraficoPeriodo() {
             const { inicioPeriodo, finPeriodo } = obtenerPeriodoPagoActual();
             
@@ -3438,6 +3567,67 @@ function mostrarToast(mensaje, tipo = 'success') {
                     }
                 }, 100);
             }
+            html += `</div>`;
+            app.innerHTML = html;
+
+            // Inicializar iconos de Lucide
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // Crear gráficos si estamos en la vista de estadísticas
+            if (state.vista === 'estadisticas') {
+                setTimeout(() => {
+                    const datosGrafico = obtenerDatosGraficoPeriodo();
+                    if (datosGrafico.length > 0) {
+                        const pieCtx = document.getElementById('pieChart');
+                        if (pieCtx) {
+                            new Chart(pieCtx, {
+                                type: 'pie',
+                                data: {
+                                    labels: datosGrafico.map(d => d.nombre),
+                                    datasets: [{
+                                        data: datosGrafico.map(d => d.valor),
+                                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
+                                        borderWidth: 2,
+                                        borderColor: '#0f0f23'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: true,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                color: '#ffffff',
+                                                padding: 15,
+                                                font: {
+                                                    size: 12
+                                                }
+                                            }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return context.label + ': ' + context.parsed.toFixed(2) + '€';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }, 100);
+            }
+            
+            // NOVO: Mostrar/ocultar botón deshacer
+            const btnDeshacer = document.getElementById('btn-deshacer');
+            if (btnDeshacer) {
+                btnDeshacer.style.display = state.historialAcciones.length > 0 ? 'block' : 'none';
+            }
+        }
         }
 // ============================================
     // ============================================
