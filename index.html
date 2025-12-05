@@ -1145,35 +1145,32 @@
             render();
         }
 
-        function agregarIngreso() {
-            const descripcion = document.getElementById('ingreso-descripcion').value || 'Ingreso';
-            const monto = document.getElementById('ingreso-monto').value;
-            const cuentaId = parseInt(document.getElementById('ingreso-cuenta').value);
-            
-            if (monto && parseFloat(monto) > 0) {
-                state.ingresos.push({
-                    descripcion,
-                    monto: parseFloat(monto),
-                    cuentaId,
-                    fecha: new Date().toISOString(),
-                    id: Date.now()
-                });
-                
-                recalcularSaldosCuentas();
-                
-                document.getElementById('ingreso-descripcion').value = '';
-                document.getElementById('ingreso-monto').value = '';
-                
-                guardarEstado();
-                mostrarToast(`✅ Ingreso de ${parseFloat(monto).toFixed(2)}€ engadido`, 'success');
-                render();
-            } else {
-                mostrarToast('❌ Introduce un monto válido', 'error');
-            }
-                render();
-            }
-        }
-
+      function agregarIngreso() {
+    const descripcion = document.getElementById('ingreso-descripcion').value || 'Ingreso';
+    const monto = document.getElementById('ingreso-monto').value;
+    const cuentaId = parseInt(document.getElementById('ingreso-cuenta').value);
+    
+    if (monto && parseFloat(monto) > 0) {
+        state.ingresos.push({
+            descripcion,
+            monto: parseFloat(monto),
+            cuentaId,
+            fecha: new Date().toISOString(),
+            id: Date.now()
+        });
+        
+        recalcularSaldosCuentas();
+        
+        document.getElementById('ingreso-descripcion').value = '';
+        document.getElementById('ingreso-monto').value = '';
+        
+        guardarEstado();
+        mostrarToast(`✅ Ingreso de ${parseFloat(monto).toFixed(2)}€ engadido`, 'success');
+        render();
+    } else {
+        mostrarToast('❌ Introduce un monto válido', 'error');
+    }
+}
       function eliminarIngreso(id) {
             const ingreso = state.ingresos.find(i => i.id === id);
             if (ingreso && confirm(`🗑️ Seguro que queres eliminar o ingreso de ${ingreso.monto.toFixed(2)}€ (${ingreso.descripcion})?`)) {
