@@ -378,6 +378,7 @@
             gastos: JSON.parse(localStorage.getItem('gastos') || '[]'),
             ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
             ajustes: JSON.parse(localStorage.getItem('ajustes') || '[]'),
+            transferencias: JSON.parse(localStorage.getItem('transferencias') || '[]'),
             objetivosAhorro: JSON.parse(localStorage.getItem('objetivosAhorro') || '[]'),
             categorias: JSON.parse(localStorage.getItem('categorias') || '["Alimentación", "Transporte", "Entretenimiento", "Salud", "Hogar", "Ropa", "Outros"]'),
             cuentas: JSON.parse(localStorage.getItem('cuentas') || '[{"id": 1, "nombre": "Conta Principal", "tipo": "banco", "saldoInicial": 0, "saldo": 0}]'),
@@ -441,6 +442,7 @@
             localStorage.setItem('gastos', JSON.stringify(state.gastos));
             localStorage.setItem('ingresos', JSON.stringify(state.ingresos));
             localStorage.setItem('ajustes', JSON.stringify(state.ajustes));
+            localStorage.setItem('transferencias', JSON.stringify(state.transferencias));
             localStorage.setItem('objetivosAhorro', JSON.stringify(state.objetivosAhorro));
             localStorage.setItem('categorias', JSON.stringify(state.categorias));
             localStorage.setItem('cuentas', JSON.stringify(state.cuentas));
@@ -533,7 +535,7 @@
             return { inicioPeriodo, finPeriodo };
         }
 
-        function calcularSaldoCuenta(cuentaId) {
+       function calcularSaldoCuenta(cuentaId) {
             const cuenta = state.cuentas.find(c => c.id === cuentaId);
             if (!cuenta) return 0;
             
@@ -553,6 +555,18 @@
                     saldo += (a.tipo === 'positivo' ? monto : -monto);
                 }
             });
+            
+            // NOVO: Procesar transferencias
+            if (state.transferencias) {
+                state.transferencias.forEach(t => {
+                    if (t.origenId === cuentaId) {
+                        saldo -= parseFloat(t.monto);  // Resta se é orixe
+                    }
+                    if (t.destinoId === cuentaId) {
+                        saldo += parseFloat(t.monto);  // Suma se é destino
+                    }
+                });
+            }
             
             return saldo;
         }
@@ -1240,7 +1254,50 @@
                 render();
             }
         }
-function editarCuenta(id) {
+function realizarTransferencia() {
+            const origenId = parseInt(document.getElementById('trans-origen').value);
+            const destinoId = parseInt(document.getElementById('trans-destino').value);
+            const monto = parseFloat(document.getElementById('trans-monto').value);
+            const descripcion = document.getElementById('trans-descripcion').value;
+            
+            if (!origenId || !destinoId || !monto || monto <= 0) {
+                alert('❌ Completa todos os campos obrigatorios');
+                return;
+            }
+            
+            if (origenId === destinoId) {
+                alert('❌ Orixe e destino non poden ser a mesma conta');
+                return;
+            }
+            
+            const cuentaOrigen = state.cuentas.find(c => c.id === origenId);
+            if (cuentaOrigen.saldo < monto) {
+                if (!confirm(`⚠️ A conta ${cuentaOrigen.nombre} ten ${cuentaOrigen.saldo.toFixed(2)}€. Queres continuar igualmente?`)) {
+                    return;
+                }
+            }
+            
+            if (!state.transferencias) state.transferencias = [];
+            
+            state.transferencias.push({
+                origenId,
+                destinoId,
+                monto,
+                descripcion: descripcion || '',
+                fecha: new Date().toISOString(),
+                id: Date.now()
+            });
+            
+            document.getElementById('trans-origen').value = '';
+            document.getElementById('trans-destino').value = '';
+            document.getElementById('trans-monto').value = '';
+            document.getElementById('trans-descripcion').value = '';
+            
+            recalcularSaldosCuentas();
+            guardarEstado();
+            render();
+        }
+        function editarCuenta(id) {
             state.editando = { tipo: 'cuenta', id: id };
             render();
         }
@@ -2255,6 +2312,82 @@ function editarCuenta(id) {
                                 class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 rounded-xl font-bold"
                             >
                                 ➕ Engadir
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Transferencias entre Contas -->
+                    <div class="card-neon rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold mb-6 text-white">🔄 Transferencias entre Contas</h2>
+                        <p class="text-gray-400 text-sm mb-4">Move diñeiro entre as túas contas sen afectar gastos nin ingresos</p>
+                        
+                        ${state.transferencias && state.transferencias.length > 0 ? `
+                            <div class="space-y-3 mb-6 max-h-60 overflow-y-auto">
+                                ${state.transferencias.slice().reverse().map(trans => {
+                                    const fecha = new Date(trans.fecha);
+                                    const origen = state.cuentas.find(c => c.id === trans.origenId);
+                                    const destino = state.cuentas.find(c => c.id === trans.destinoId);
+                                    return `
+                                        <div class="item-hover flex justify-between items-center bg-black/30 rounded-xl p-4">
+                                            <div class="flex-1">
+                                                <p class="text-white font-semibold">${origen?.nombre || 'Sen conta'} → ${destino?.nombre || 'Sen conta'}</p>
+                                                <p class="text-gray-400 text-sm mt-1">${fecha.toLocaleDateString('gl-ES')}${trans.descripcion ? ' - ' + trans.descripcion : ''}</p>
+                                            </div>
+                                            <div class="flex items-center gap-4">
+                                                <span class="font-bold text-lg text-blue-400">${parseFloat(trans.monto).toFixed(2)}€</span>
+                                                <button 
+                                                    onclick="
+                                                        if(confirm('Seguro que queres eliminar esta transferencia?')) {
+                                                            state.transferencias = state.transferencias.filter(t => t.id !== ${trans.id});
+                                                            recalcularSaldosCuentas();
+                                                            guardarEstado();
+                                                            render();
+                                                        }
+                                                    "
+                                                    class="delete-btn text-red-500 hover:text-red-400 transition-colors"
+                                                >
+                                                    ❌
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : '<p class="text-gray-400 text-center py-4 mb-6">Non hai transferencias rexistradas</p>'}
+
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <select 
+                                id="trans-origen"
+                                class="input-neon px-4 py-3 rounded-xl text-white"
+                            >
+                                <option value="">Desde...</option>
+                                ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+                            </select>
+                            <select 
+                                id="trans-destino"
+                                class="input-neon px-4 py-3 rounded-xl text-white"
+                            >
+                                <option value="">Ata...</option>
+                                ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+                            </select>
+                            <input 
+                                type="number"
+                                id="trans-monto"
+                                step="0.01"
+                                min="0"
+                                class="input-neon px-4 py-3 rounded-xl text-white"
+                                placeholder="Monto (€)"
+                            />
+                            <input 
+                                type="text"
+                                id="trans-descripcion"
+                                class="input-neon px-4 py-3 rounded-xl text-white"
+                                placeholder="Descrición (opcional)"
+                            />
+                            <button 
+                                onclick="realizarTransferencia()"
+                                class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 rounded-xl font-bold"
+                            >
+                                🔄 Transferir
                             </button>
                         </div>
                     </div>
