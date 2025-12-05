@@ -430,9 +430,8 @@
             </div>
         </div>
 
-    <!-- Botón Flotante DESHACER -->
-    <button
-        onclick="deshacer()"
+ <!-- Botón Flotante DESHACER -->
+    <button onclick="deshacer()"
         id="btn-deshacer"
         style="
             position: fixed;
@@ -3566,15 +3565,13 @@ function deshacer() {
                 }, 100);
             }
          
-            // NOVO: Mostrar/ocultar botón deshacer
+         // NOVO: Mostrar/ocultar botón deshacer
             const btnDeshacer = document.getElementById('btn-deshacer');
             if (btnDeshacer) {
                 btnDeshacer.style.display = state.historialAcciones.length > 0 ? 'block' : 'none';
             }
         }
-        }
-// ============================================
-    // ============================================
+
         // PULL TO REFRESH SIMPLIFICADO
         // ============================================
         let startY = 0;
