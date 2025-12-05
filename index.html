@@ -2855,12 +2855,48 @@ function deshacer() {
                 `;
             }
             // VISTA DE ESTADÍSTICAS (TODO O TEU CÓDIGO)
-       else if (state.vista === 'estadisticas') {
+ else if (state.vista === 'estadisticas') {
     const datosGrafico = obtenerDatosGraficoPeriodo();
     const analisis = analizarTendenciasAvanzado();
     
     html += `
         <div class="space-y-8">
+            <!-- Período Actual -->
+            <div class="card-neon rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-4 text-white">📅 Período Actual</h2>
+                <p class="text-gray-400">
+                    Do <span class="text-white font-semibold">${stats.inicioPeriodo.toLocaleDateString('gl-ES')}</span> 
+                    ao <span class="text-white font-semibold">${stats.finPeriodo.toLocaleDateString('gl-ES')}</span>
+                </p>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="text-gray-400 text-sm">Días transcorridos</p>
+                        <p class="text-2xl font-bold text-blue-400">${stats.diasTranscurridos}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Días restantes</p>
+                        <p class="text-2xl font-bold text-yellow-400">${stats.diasRestantes}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progreso del Período -->
+            <div class="card-neon rounded-2xl p-6">
+                <h3 class="text-xl font-bold text-white mb-4">📈 Progreso do Período</h3>
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-gray-400">Gastaches o ${stats.porcentajeGastado.toFixed(1)}% dos teus ingresos</span>
+                        <span class="text-white font-semibold">${stats.totalGastos.toFixed(2)}€ / ${stats.ingresoTotal.toFixed(2)}€</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-4">
+                        <div 
+                            class="h-4 rounded-full transition-all duration-500 ${stats.porcentajeGastado > 80 ? 'bg-red-500' : stats.porcentajeGastado > 50 ? 'bg-yellow-500' : 'bg-green-500'}"
+                            style="width: ${Math.min(stats.porcentajeGastado, 100)}%"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Insights & Recomendacións -->
             <div class="card-neon rounded-2xl p-6">
                 <div class="flex items-center justify-between mb-6">
@@ -2908,25 +2944,6 @@ function deshacer() {
                 </div>
             ` : ''}
 
-            <!-- Información del Período -->
-            <div class="card-neon rounded-2xl p-6">
-                <h2 class="text-2xl font-bold mb-4 text-white">📅 Período Actual</h2>
-                <p class="text-gray-400">
-                    Do <span class="text-white font-semibold">${stats.inicioPeriodo.toLocaleDateString('gl-ES')}</span> 
-                    ao <span class="text-white font-semibold">${stats.finPeriodo.toLocaleDateString('gl-ES')}</span>
-                </p>
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <p class="text-gray-400 text-sm">Días transcorridos</p>
-                        <p class="text-2xl font-bold text-blue-400">${stats.diasTranscurridos}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400 text-sm">Días restantes</p>
-                        <p class="text-2xl font-bold text-yellow-400">${stats.diasRestantes}</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- Gráfico de Pastel -->
             <div class="card-neon rounded-2xl p-6">
                 <h2 class="text-2xl font-bold mb-6 text-white">📊 Distribución de Gastos por Categoría</h2>
@@ -2957,23 +2974,6 @@ function deshacer() {
                         </div>
                     </div>
                 ` : '<p class="text-gray-400 text-center py-8">Non hai datos suficientes para mostrar o gráfico</p>'}
-            </div>
-
-            <!-- Progreso del Período -->
-            <div class="card-neon rounded-2xl p-6">
-                <h3 class="text-xl font-bold text-white mb-4">📈 Progreso do Período</h3>
-                <div class="mb-4">
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-gray-400">Gastaches o ${stats.porcentajeGastado.toFixed(1)}% dos teus ingresos</span>
-                        <span class="text-white font-semibold">${stats.totalGastos.toFixed(2)}€ / ${stats.ingresoTotal.toFixed(2)}€</span>
-                    </div>
-                    <div class="w-full bg-gray-700 rounded-full h-4">
-                        <div 
-                            class="h-4 rounded-full transition-all duration-500 ${stats.porcentajeGastado > 80 ? 'bg-red-500' : stats.porcentajeGastado > 50 ? 'bg-yellow-500' : 'bg-green-500'}"
-                            style="width: ${Math.min(stats.porcentajeGastado, 100)}%"
-                        ></div>
-                    </div>
-                </div>
             </div>
 
             <!-- Todos los Gastos del Período -->
