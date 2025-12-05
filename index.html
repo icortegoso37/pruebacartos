@@ -1237,29 +1237,30 @@
             }
         }
 
-        function guardarEdicionIngreso(id) {
-            guardarAccion('editarIngreso', {
-    id: id,
-    estadoAnterior: {...ingreso}
-});
-            const ingreso = state.ingresos.find(i => i.id === id);
-            if (ingreso) {
-                ingreso.descripcion = document.getElementById(`edit-desc-${id}`).value;
-                ingreso.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
-                ingreso.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
-                
-                const fechaInput = document.getElementById(`edit-fecha-${id}`);
-                if (fechaInput) {
-                    ingreso.fecha = new Date(fechaInput.value).toISOString();
-                }
-                
-                state.editando = null;
-                recalcularSaldosCuentas();
-                guardarEstado();
-                mostrarToast('✅ Ingreso actualizado', 'success');
-                render();
-            }
+    function guardarEdicionIngreso(id) {
+    const ingreso = state.ingresos.find(i => i.id === id);
+    if (ingreso) {
+        guardarAccion('editarIngreso', {
+            id: id,
+            estadoAnterior: {...ingreso}
+        });
+        
+        ingreso.descripcion = document.getElementById(`edit-desc-${id}`).value;
+        ingreso.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
+        ingreso.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
+        
+        const fechaInput = document.getElementById(`edit-fecha-${id}`);
+        if (fechaInput) {
+            ingreso.fecha = new Date(fechaInput.value).toISOString();
         }
+        
+        state.editando = null;
+        recalcularSaldosCuentas();
+        guardarEstado();
+        mostrarToast('✅ Ingreso actualizado', 'success');
+        render();
+    }
+}
 
         function editarGastoRecurrente(id) {
             const gasto = state.gastosRecurrentes.find(g => g.id === id);
