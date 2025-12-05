@@ -383,6 +383,7 @@
             categorias: JSON.parse(localStorage.getItem('categorias') || '["Alimentación", "Transporte", "Entretenimiento", "Salud", "Hogar", "Ropa", "Outros"]'),
             cuentas: JSON.parse(localStorage.getItem('cuentas') || '[{"id": 1, "nombre": "Conta Principal", "tipo": "banco", "saldoInicial": 0, "saldo": 0}]'),
             alertasConfig: JSON.parse(localStorage.getItem('alertasConfig') || '{"diasParaCobro": 3, "porcentajeGastoMitadMes": 50, "alertaObjetivosEnRiesgo": true}'),
+            sueldoConfirmadoPeriodoActual: localStorage.getItem('sueldoConfirmadoPeriodoActual') || '', 
             vista: 'principal',
             alertasMostradas: [],
             ultimaActualizacionRecurrentes: localStorage.getItem('ultimaActualizacionRecurrentes') || '',
@@ -448,6 +449,7 @@
             localStorage.setItem('cuentas', JSON.stringify(state.cuentas));
             localStorage.setItem('alertasConfig', JSON.stringify(state.alertasConfig));
             localStorage.setItem('ultimaActualizacionRecurrentes', state.ultimaActualizacionRecurrentes);
+            localStorage.setItem('sueldoConfirmadoPeriodoActual', state.sueldoConfirmadoPeriodoActual);
             localStorage.setItem('eventosCalendario', JSON.stringify(state.eventosCalendario));
         }
 
@@ -598,13 +600,14 @@
             state.ultimaActualizacionRecurrentes = inicioPeriodoStr;
             recalcularSaldosCuentas();
             guardarEstado();
+            
             // Confirmar sueldo ao inicio do período
             if (!state.sueldoConfirmadoPeriodoActual) {
-                state.sueldoConfirmadoPeriodoActual = periodoKey;
+                state.sueldoConfirmadoPeriodoActual = inicioPeriodoStr;
             }
             
-            if (state.sueldoConfirmadoPeriodoActual !== periodoKey) {
-                state.sueldoConfirmadoPeriodoActual = periodoKey;
+            if (state.sueldoConfirmadoPeriodoActual !== inicioPeriodoStr) {
+                state.sueldoConfirmadoPeriodoActual = inicioPeriodoStr;
                 
                 setTimeout(() => {
                     const sueldo = prompt('💵 Canto cobraches este mes?');
@@ -624,7 +627,6 @@
                 }, 500);
             }
         }
-
         // TODO O TEU CÓDIGO DE ESTADÍSTICAS
         function calcularEstadisticas() {
             const hoy = new Date();
@@ -3433,8 +3435,6 @@ function realizarTransferencia() {
             pulling = false;
         }, { passive: true });
 
-        // Renderizar la aplicación inicialmente
-        render();
         // Renderizar la aplicación inicialmente
         render();
     </script>
