@@ -318,7 +318,6 @@
             transform: scale(0.95);
         }
     </style>
-    </style>
 </head>
 <body class="text-white">
     <div id="app" class="min-h-screen p-4 md:p-8"></div>
@@ -429,10 +428,6 @@
                     <div class="nav-label">Axustes</div>
                 </div>
             </div>
-        </div>
-    </div>
-        </div>
-
     <!-- Botón Flotante DESHACER -->
     <button 
         onclick="deshacer()"
@@ -1162,30 +1157,31 @@
             }
         }
 
-      function guardarEdicionGasto(id) {
-          guardarAccion('editarGasto', {
-    id: id,
-    estadoAnterior: {...gasto}
-});
-            const gasto = state.gastos.find(g => g.id === id);
-            if (gasto) {
-                gasto.descripcion = document.getElementById(`edit-desc-${id}`).value;
-                gasto.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
-                gasto.categoria = document.getElementById(`edit-cat-${id}`).value;
-                gasto.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
-                
-                const fechaInput = document.getElementById(`edit-fecha-${id}`);
-                if (fechaInput) {
-                    gasto.fecha = new Date(fechaInput.value).toISOString();
-                }
-                
-                state.editando = null;
-                recalcularSaldosCuentas();
-                guardarEstado();
-                mostrarToast('✅ Gasto actualizado', 'success');
-                render();
-            }
+     function guardarEdicionGasto(id) {
+    const gasto = state.gastos.find(g => g.id === id);
+    if (gasto) {
+        guardarAccion('editarGasto', {
+            id: id,
+            estadoAnterior: {...gasto}
+        });
+        
+        gasto.descripcion = document.getElementById(`edit-desc-${id}`).value;
+        gasto.monto = parseFloat(document.getElementById(`edit-monto-${id}`).value);
+        gasto.categoria = document.getElementById(`edit-cat-${id}`).value;
+        gasto.cuentaId = parseInt(document.getElementById(`edit-cuenta-${id}`).value);
+        
+        const fechaInput = document.getElementById(`edit-fecha-${id}`);
+        if (fechaInput) {
+            gasto.fecha = new Date(fechaInput.value).toISOString();
         }
+        
+        state.editando = null;
+        recalcularSaldosCuentas();
+        guardarEstado();
+        mostrarToast('✅ Gasto actualizado', 'success');
+        render();
+    }
+}
 
         function cancelarEdicion() {
             state.editando = null;
@@ -3567,61 +3563,7 @@ function deshacer() {
                     }
                 }, 100);
             }
-            html += `</div>`;
-            app.innerHTML = html;
-
-            // Inicializar iconos de Lucide
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-
-            // Crear gráficos si estamos en la vista de estadísticas
-            if (state.vista === 'estadisticas') {
-                setTimeout(() => {
-                    const datosGrafico = obtenerDatosGraficoPeriodo();
-                    if (datosGrafico.length > 0) {
-                        const pieCtx = document.getElementById('pieChart');
-                        if (pieCtx) {
-                            new Chart(pieCtx, {
-                                type: 'pie',
-                                data: {
-                                    labels: datosGrafico.map(d => d.nombre),
-                                    datasets: [{
-                                        data: datosGrafico.map(d => d.valor),
-                                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
-                                        borderWidth: 2,
-                                        borderColor: '#0f0f23'
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: true,
-                                    plugins: {
-                                        legend: {
-                                            position: 'bottom',
-                                            labels: {
-                                                color: '#ffffff',
-                                                padding: 15,
-                                                font: {
-                                                    size: 12
-                                                }
-                                            }
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: function(context) {
-                                                    return context.label + ': ' + context.parsed.toFixed(2) + '€';
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    }
-                }, 100);
-            }
-            
+         
             // NOVO: Mostrar/ocultar botón deshacer
             const btnDeshacer = document.getElementById('btn-deshacer');
             if (btnDeshacer) {
