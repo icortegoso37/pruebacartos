@@ -2056,8 +2056,24 @@ function mostrarDialogoRecurrentesSugeridos() {
         html += `
     <div class="card-neon rounded-2xl p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-bold text-white">🎯 Obxetivos de Aforro</h2>
-            <div class="flex gap-2">
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-2xl font-bold text-white">🎯 Obxetivos de Aforro</h2>
+    <div class="flex gap-2">
+        <button 
+            onclick="mostrarSimulador()"
+            class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 rounded-xl font-bold text-sm"
+        >
+            🎯 Simulador
+        </button>
+        <button 
+            onclick="mostrarPlanVital()"
+            class="btn-neon bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 rounded-xl font-bold text-sm"
+        >
+            🌟 Plan Vital
+        </button>
+    </div>
+</div>          
+<div class="flex gap-2">
                 <button 
                     onclick="mostrarSimulador()"
                     class="btn-neon bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 rounded-xl font-bold text-sm"
@@ -2072,6 +2088,359 @@ function mostrarDialogoRecurrentesSugeridos() {
                 </button>
             </div>
         </div>
+        // ============================================
+// GRUPO 6 - PLANIFICACIÓN LARGA
+// ============================================
+
+function proyectarALargoPlazo(meses, escenario = {}) {
+    const stats = calcularEstadisticas();
+    const proyeccion = {
+        meses: [],
+        totalAhorrado: 0,
+        objetivosAlcanzados: []
+    };
+    
+    const ingresoMensual = escenario.ingresoMensual || stats.ingresoTotal || 0;
+    const gastoRecurrenteMensual = escenario.gastoRecurrente || stats.totalGastosRecurrentes || 0;
+    const gastoVariableMensual = escenario.gastoVariable || stats.totalGastosVariables || 0;
+    const ahorroMensualObjetivos = escenario.ahorroObjetivos || stats.ahorroDiarioNecesario * 30 || 0;
+    
+    let saldoAcumulado = stats.disponibleTotal;
+    
+    for (let i = 1; i <= meses; i++) {
+        const ingresoMes = ingresoMensual;
+        const gastoMes = gastoRecurrenteMensual + gastoVariableMensual;
+        const ahorroMes = Math.min(ahorroMensualObjetivos, ingresoMes - gastoMes);
+        const disponibleFinMes = saldoAcumulado + ingresoMes - gastoMes - ahorroMes;
+        
+        saldoAcumulado = disponibleFinMes;
+        proyeccion.totalAhorrado += ahorroMes;
+        
+        proyeccion.meses.push({
+            mes: i,
+            ingreso: ingresoMes,
+            gastos: gastoMes,
+            ahorro: ahorroMes,
+            disponible: disponibleFinMes,
+            ahorroAcumulado: proyeccion.totalAhorrado
+        });
+    }
+    
+    state.objetivosAhorro.forEach(obj => {
+        const montoRestante = parseFloat(obj.metaMonto) - parseFloat(obj.montoAhorrado || 0);
+        const mesesNecesarios = ahorroMensualObjetivos > 0 ? Math.ceil(montoRestante / ahorroMensualObjetivos) : Infinity;
+        
+        if (mesesNecesarios <= meses) {
+            proyeccion.objetivosAlcanzados.push({
+                nombre: obj.nombre,
+                mesesNecesarios: mesesNecesarios,
+                monto: obj.metaMonto
+            });
+        }
+    });
+    
+    return proyeccion;
+}
+
+function simularEscenario(cambios) {
+    const stats = calcularEstadisticas();
+    
+    const escenario = {
+        ingresoMensual: cambios.ingresoMensual || stats.ingresoTotal,
+        gastoRecurrente: cambios.gastoRecurrente || stats.totalGastosRecurrentes,
+        gastoVariable: cambios.gastoVariable || stats.totalGastosVariables,
+        ahorroObjetivos: cambios.ahorroObjetivos || (stats.ahorroDiarioNecesario * 30)
+    };
+    
+    const meses = cambios.meses || 12;
+    return proyectarALargoPlazo(meses, escenario);
+}
+
+function calcularPlanVital(años) {
+    const meses = años * 12;
+    const proyeccion = proyectarALargoPlazo(meses);
+    
+    const hitos = [];
+    
+    for (let año = 1; año <= años; año++) {
+        const mesIndex = (año * 12) - 1;
+        if (proyeccion.meses[mesIndex]) {
+            hitos.push({
+                año: año,
+                ahorroAcumulado: proyeccion.meses[mesIndex].ahorroAcumulado,
+                disponible: proyeccion.meses[mesIndex].disponible
+            });
+        }
+    }
+    
+    return {
+        proyeccion: proyeccion,
+        hitos: hitos,
+        objetivosAlcanzables: proyeccion.objetivosAlcanzados
+    };
+}
+
+function mostrarSimulador() {
+    const stats = calcularEstadisticas();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div class="modal-content p-6" style="max-width: 800px;">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-white">🎯 Simulador de Escenarios</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-white text-2xl">×</button>
+            </div>
+            
+            <p class="text-gray-400 mb-6">Axusta os valores para ver como afectan as túas finanzas a futuro</p>
+            
+            <div class="space-y-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-300 text-sm mb-2">💰 Ingreso Mensual</label>
+                        <input 
+                            type="number" 
+                            id="sim-ingreso"
+                            value="${stats.ingresoTotal.toFixed(0)}"
+                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                            step="100"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-300 text-sm mb-2">🔄 Gastos Recorrentes</label>
+                        <input 
+                            type="number" 
+                            id="sim-recurrente"
+                            value="${stats.totalGastosRecurrentes.toFixed(0)}"
+                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                            step="50"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-300 text-sm mb-2">💸 Gastos Variables</label>
+                        <input 
+                            type="number" 
+                            id="sim-variable"
+                            value="${stats.totalGastosVariables.toFixed(0)}"
+                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                            step="50"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-300 text-sm mb-2">🎯 Aforro Mensual Obxectivos</label>
+                        <input 
+                            type="number" 
+                            id="sim-ahorro"
+                            value="${(stats.ahorroDiarioNecesario * 30).toFixed(0)}"
+                            class="input-neon w-full px-4 py-3 rounded-xl text-white"
+                            step="50"
+                        />
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-300 text-sm mb-2">📅 Meses a Proxectar</label>
+                    <select id="sim-meses" class="input-neon w-full px-4 py-3 rounded-xl text-white">
+                        <option value="3">3 meses</option>
+                        <option value="6">6 meses</option>
+                        <option value="12" selected>1 ano</option>
+                        <option value="24">2 anos</option>
+                        <option value="36">3 anos</option>
+                        <option value="60">5 anos</option>
+                        <option value="120">10 anos</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button 
+                onclick="ejecutarSimulacion()"
+                class="btn-neon w-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-xl font-bold mb-6"
+            >
+                🚀 Simular
+            </button>
+            
+            <div id="resultados-simulacion" class="hidden">
+                <div class="card-neon rounded-2xl p-6 mb-4">
+                    <h3 class="text-xl font-bold text-white mb-4">📊 Resultados da Simulación</h3>
+                    <div id="datos-simulacion"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function ejecutarSimulacion() {
+    const ingreso = parseFloat(document.getElementById('sim-ingreso').value) || 0;
+    const recurrente = parseFloat(document.getElementById('sim-recurrente').value) || 0;
+    const variable = parseFloat(document.getElementById('sim-variable').value) || 0;
+    const ahorro = parseFloat(document.getElementById('sim-ahorro').value) || 0;
+    const meses = parseInt(document.getElementById('sim-meses').value) || 12;
+    
+    const resultado = simularEscenario({
+        ingresoMensual: ingreso,
+        gastoRecurrente: recurrente,
+        gastoVariable: variable,
+        ahorroObjetivos: ahorro,
+        meses: meses
+    });
+    
+    const mesFinal = resultado.meses[resultado.meses.length - 1];
+    
+    let html = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-xl p-4 border border-green-500/30">
+                <p class="text-gray-400 text-sm mb-1">💰 Dispoñible Final</p>
+                <p class="text-3xl font-black text-green-400">${mesFinal.disponible.toFixed(2)}€</p>
+            </div>
+            
+            <div class="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-xl p-4 border border-blue-500/30">
+                <p class="text-gray-400 text-sm mb-1">🎯 Aforro Acumulado</p>
+                <p class="text-3xl font-black text-blue-400">${resultado.totalAhorrado.toFixed(2)}€</p>
+            </div>
+            
+            <div class="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-xl p-4 border border-purple-500/30">
+                <p class="text-gray-400 text-sm mb-1">📈 Aforro Mensual Medio</p>
+                <p class="text-3xl font-black text-purple-400">${(resultado.totalAhorrado / meses).toFixed(2)}€</p>
+            </div>
+        </div>
+        
+        ${resultado.objetivosAlcanzados.length > 0 ? `
+            <div class="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-xl p-4 border border-yellow-500/30 mb-4">
+                <h4 class="text-lg font-bold text-white mb-3">🎉 Obxectivos Alcanzables</h4>
+                <div class="space-y-2">
+                    ${resultado.objetivosAlcanzados.map(obj => `
+                        <div class="flex justify-between items-center">
+                            <span class="text-white">✅ ${obj.nombre}</span>
+                            <span class="text-yellow-400 font-bold">En ${obj.mesesNecesarios} meses</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : `
+            <div class="bg-red-900/20 rounded-xl p-4 border border-red-500/30 mb-4">
+                <p class="text-red-400">⚠️ Con este escenario non alcanzarías ningún obxectivo</p>
+            </div>
+        `}
+        
+        <div class="bg-black/30 rounded-xl p-4">
+            <h4 class="text-lg font-bold text-white mb-3">📅 Hitos Principais</h4>
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+                ${resultado.meses.filter((m, i) => i % Math.ceil(meses / 10) === 0 || i === meses - 1).map(mes => `
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-400">Mes ${mes.mes}:</span>
+                        <div class="flex gap-4">
+                            <span class="text-blue-400">Aforro: ${mes.ahorroAcumulado.toFixed(0)}€</span>
+                            <span class="text-green-400">Dispoñible: ${mes.disponible.toFixed(0)}€</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('datos-simulacion').innerHTML = html;
+    document.getElementById('resultados-simulacion').classList.remove('hidden');
+}
+
+function mostrarPlanVital() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div class="modal-content p-6" style="max-width: 900px;">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-white">🌟 Plan Vital - Visión a Longo Prazo</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-white text-2xl">×</button>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                ${[1, 2, 5, 10].map(años => {
+                    const plan = calcularPlanVital(años);
+                    const hitoFinal = plan.hitos[plan.hitos.length - 1];
+                    
+                    return `
+                        <div class="card-neon rounded-xl p-4 text-center cursor-pointer hover:scale-105 transition-transform" onclick="mostrarDetallePlanVital(${años})">
+                            <p class="text-4xl mb-2">📅</p>
+                            <p class="text-white font-bold text-lg mb-2">${años} ${años === 1 ? 'Ano' : 'Anos'}</p>
+                            <p class="text-gray-400 text-sm mb-1">Aforro Total:</p>
+                            <p class="text-2xl font-black text-green-400">${hitoFinal ? hitoFinal.ahorroAcumulado.toFixed(0) : '0'}€</p>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            
+            <div id="detalle-plan-vital"></div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function mostrarDetallePlanVital(años) {
+    const plan = calcularPlanVital(años);
+    
+    let html = `
+        <div class="card-neon rounded-2xl p-6">
+            <h3 class="text-xl font-bold text-white mb-4">📊 Proxección a ${años} ${años === 1 ? 'Ano' : 'Anos'}</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-green-900/30 rounded-xl p-4">
+                    <p class="text-gray-400 text-sm mb-1">💰 Aforro Total</p>
+                    <p class="text-3xl font-black text-green-400">${plan.hitos[plan.hitos.length - 1].ahorroAcumulado.toFixed(2)}€</p>
+                </div>
+                
+                <div class="bg-blue-900/30 rounded-xl p-4">
+                    <p class="text-gray-400 text-sm mb-1">📈 Dispoñible Final</p>
+                    <p class="text-3xl font-black text-blue-400">${plan.hitos[plan.hitos.length - 1].disponible.toFixed(2)}€</p>
+                </div>
+                
+                <div class="bg-purple-900/30 rounded-xl p-4">
+                    <p class="text-gray-400 text-sm mb-1">🎯 Obxectivos</p>
+                    <p class="text-3xl font-black text-purple-400">${plan.objetivosAlcanzables.length}</p>
+                </div>
+            </div>
+            
+            <div class="bg-black/30 rounded-xl p-4">
+                <h4 class="text-white font-bold mb-3">📅 Hitos Anuais</h4>
+                <div class="space-y-3">
+                    ${plan.hitos.map(hito => `
+                        <div class="flex justify-between items-center p-3 bg-black/30 rounded-xl">
+                            <span class="text-white font-semibold">Ano ${hito.año}</span>
+                            <div class="flex gap-6 text-sm">
+                                <span class="text-green-400">Aforro: ${hito.ahorroAcumulado.toFixed(0)}€</span>
+                                <span class="text-blue-400">Dispoñible: ${hito.disponible.toFixed(0)}€</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            ${plan.objetivosAlcanzables.length > 0 ? `
+                <div class="bg-yellow-900/20 rounded-xl p-4 border border-yellow-500/30 mt-4">
+                    <h4 class="text-white font-bold mb-3">🎉 Obxectivos que Alcanzarías</h4>
+                    <div class="space-y-2">
+                        ${plan.objetivosAlcanzables.map(obj => `
+                            <div class="flex justify-between items-center">
+                                <span class="text-white">✅ ${obj.nombre}</span>
+                                <span class="text-yellow-400">En ${obj.mesesNecesarios} meses</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    document.getElementById('detalle-plan-vital').innerHTML = html;
+}
         function cambiarVista(nuevaVista) {
             // Actualizar clases active en navegación
             document.querySelectorAll('.nav-item').forEach(item => {
