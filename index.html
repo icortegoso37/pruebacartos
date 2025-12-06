@@ -18,8 +18,9 @@
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     
-<script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <style>
         :root {
@@ -3515,65 +3516,52 @@ function editarCuenta(id) {
                 lucide.createIcons();
             }
 
-// Crear gráficos si estamos en la vista de estadísticas (con lazy load)
+// Crear gráficos si estamos en la vista de estadísticas
             if (state.vista === 'estadisticas') {
                 setTimeout(() => {
                     const datosGrafico = obtenerDatosGraficoPeriodo();
                     if (datosGrafico.length > 0) {
                         const pieCtx = document.getElementById('pieChart');
                         if (pieCtx) {
-                            // Lazy load Chart.js solo cuando se necesita
-                            if (typeof Chart === 'undefined') {
-                                const script = document.createElement('script');
-                                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-                                script.onload = () => crearGraficoPastel(pieCtx, datosGrafico);
-                                document.head.appendChild(script);
-                            } else {
-                                crearGraficoPastel(pieCtx, datosGrafico);
-                            }
+                            new Chart(pieCtx, {
+                                type: 'pie',
+                                data: {
+                                    labels: datosGrafico.map(d => d.nombre),
+                                    datasets: [{
+                                        data: datosGrafico.map(d => d.valor),
+                                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
+                                        borderWidth: 2,
+                                        borderColor: '#0f0f23'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: true,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                color: '#ffffff',
+                                                padding: 15,
+                                                font: {
+                                                    size: 12
+                                                }
+                                            }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return context.label + ': ' + context.parsed.toFixed(2) + '€';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
                         }
                     }
                 }, 100);
             }
-        }
-
-        // Función separada para crear el gráfico
-        function crearGraficoPastel(ctx, datosGrafico) {
-            new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: datosGrafico.map(d => d.nombre),
-                    datasets: [{
-                        data: datosGrafico.map(d => d.valor),
-                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
-                        borderWidth: 2,
-                        borderColor: '#0f0f23'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#ffffff',
-                                padding: 15,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed.toFixed(2) + '€';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
         }
 
         // ============================================
