@@ -126,7 +126,7 @@
         .btn-neon {
             position: relative;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             touch-action: manipulation;
         }
 
@@ -142,7 +142,7 @@
         .input-neon {
             background: rgba(0, 0, 0, 0.3);
             border: 2px solid rgba(131, 56, 236, 0.5);
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 16px;
         }
 
@@ -990,9 +990,12 @@
         }
 
         function eliminarGastoRecurrente(id) {
-            state.gastosRecurrentes = state.gastosRecurrentes.filter(g => g.id !== id);
-            guardarEstado();
-            render();
+            const gasto = state.gastosRecurrentes.find(g => g.id === id);
+            if (gasto && confirm(`Seguro que queres eliminar "${gasto.nombre}"?`)) {
+                state.gastosRecurrentes = state.gastosRecurrentes.filter(g => g.id !== id);
+                guardarEstado();
+                render();
+            }
         }
 
         function agregarGasto() {
@@ -1209,9 +1212,12 @@
         }
 
         function eliminarObjetivo(id) {
-            state.objetivosAhorro = state.objetivosAhorro.filter(o => o.id !== id);
-            guardarEstado();
-            render();
+            const objetivo = state.objetivosAhorro.find(o => o.id === id);
+            if (objetivo && confirm(`Seguro que queres eliminar o obxectivo "${objetivo.nombre}"?`)) {
+                state.objetivosAhorro = state.objetivosAhorro.filter(o => o.id !== id);
+                guardarEstado();
+                render();
+            }
         }
 
         function anadirAhorroObjetivo(objetivoId, monto) {
@@ -1234,7 +1240,7 @@
         }
 
         function eliminarCategoria(categoria) {
-            if (state.categorias.length > 1) {
+            if (state.categorias.length > 1 && confirm(`Seguro que queres eliminar a categoría "${categoria}"?`)) {
                 state.categorias = state.categorias.filter(c => c !== categoria);
                 guardarEstado();
                 render();
