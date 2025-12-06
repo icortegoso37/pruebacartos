@@ -1044,8 +1044,26 @@
             const cuentaId = parseInt(document.getElementById('gasto-rec-cuenta').value);
             const diaPago = parseInt(document.getElementById('gasto-rec-dia').value);
             
-            if (nombre && monto && parseFloat(monto) > 0 && diaPago >= 1 && diaPago <= 31) {
+            const validacionMonto = validarMonto(monto);
+            if (!validacionMonto.valido) {
+                mostrarError(validacionMonto.mensaje);
+                return;
+            }
+            
+            if (!nombre || nombre.trim() === '') {
+                mostrarError('Debes indicar un nome para o gasto recorrente');
+                return;
+            }
+            
+            if (diaPago < 1 || diaPago > 31) {
+                mostrarError('O día de pago debe estar entre 1 e 31');
+                return;
+            }
+            
+            if (validacionMonto.valido) {
                 state.gastosRecurrentes.push({
+                    nombre,
+                    monto: validacionMonto.valor,
                     nombre,
                     monto: parseFloat(monto),
                     categoria,
@@ -1060,6 +1078,7 @@
                 
                 guardarEstado();
                 render();
+                mostrarExito('Gasto recorrente engadido correctamente');
             }
         }
 
@@ -1093,9 +1112,15 @@
                 categoria = categoriaManual;
             }
             
-            if (monto && monto > 0) {
+            const validacionMonto = validarMonto(monto);
+            if (!validacionMonto.valido) {
+                mostrarError(validacionMonto.mensaje);
+                return;
+            }
+            
+            if (validacionMonto.valido) {
                 // NOVA VALIDACIÓN MODO AHORRO EXTREMO
-                const validacion = validarGastoModoAhorroExtremo(categoria, monto);
+                const validacion = validarGastoModoAhorroExtremo(categoria, validacionMonto.valor);
                 
                 if (!validacion.permitido) {
                     if (!confirm(`${validacion.mensaje}\n\nQueres engadilo igualmente?`)) {
@@ -1128,6 +1153,7 @@
                 }
                 
                 render();
+                mostrarExito('Gasto engadido correctamente');
             }
         }
 
@@ -1179,8 +1205,16 @@
             const monto = document.getElementById('ingreso-monto').value;
             const cuentaId = parseInt(document.getElementById('ingreso-cuenta').value);
             
-            if (monto && parseFloat(monto) > 0) {
+            const validacionMonto = validarMonto(monto);
+            if (!validacionMonto.valido) {
+                mostrarError(validacionMonto.mensaje);
+                return;
+            }
+            
+            if (validacionMonto.valido) {
                 state.ingresos.push({
+                    descripcion,
+                    monto: validacionMonto.valor,
                     descripcion,
                     monto: parseFloat(monto),
                     cuentaId,
@@ -1195,6 +1229,7 @@
                 
                 guardarEstado();
                 render();
+                mostrarExito('Ingreso engadido correctamente');
             }
         }
 
@@ -1266,8 +1301,26 @@
             const metaMonto = document.getElementById('objetivo-meta').value;
             const fechaLimite = document.getElementById('objetivo-fecha').value;
             
-            if (nombre && metaMonto && parseFloat(metaMonto) > 0 && fechaLimite) {
+            const validacionMonto = validarMonto(metaMonto);
+            if (!validacionMonto.valido) {
+                mostrarError(validacionMonto.mensaje);
+                return;
+            }
+            
+            if (!nombre || nombre.trim() === '') {
+                mostrarError('Debes indicar un nome para o obxectivo');
+                return;
+            }
+            
+            if (!fechaLimite) {
+                mostrarError('Debes indicar unha data límite');
+                return;
+            }
+            
+            if (validacionMonto.valido) {
                 state.objetivosAhorro.push({
+                    nombre,
+                    metaMonto: validacionMonto.valor,
                     nombre,
                     metaMonto: parseFloat(metaMonto),
                     fechaLimite,
@@ -1282,6 +1335,7 @@
                 
                 guardarEstado();
                 render();
+                mostrarExito('Obxectivo creado correctamente');
             }
         }
 
@@ -1305,12 +1359,22 @@
 
         function agregarCategoria() {
             const nuevaCategoria = document.getElementById('nueva-categoria').value;
-            if (nuevaCategoria && !state.categorias.includes(nuevaCategoria)) {
-                state.categorias.push(nuevaCategoria);
-                document.getElementById('nueva-categoria').value = '';
-                guardarEstado();
-                render();
+            
+            if (!nuevaCategoria || nuevaCategoria.trim() === '') {
+                mostrarError('Debes indicar un nome para a categoría');
+                return;
             }
+            
+            if (state.categorias.includes(nuevaCategoria)) {
+                mostrarError('Esta categoría xa existe');
+                return;
+            }
+            
+            state.categorias.push(nuevaCategoria);
+            document.getElementById('nueva-categoria').value = '';
+            guardarEstado();
+            render();
+            mostrarExito('Categoría engadida correctamente');
         }
 
         function eliminarCategoria(categoria) {
@@ -1326,8 +1390,12 @@
             const tipo = document.getElementById('cuenta-tipo').value;
             const saldoInicial = document.getElementById('cuenta-saldo').value;
             
+            if (!nombre || nombre.trim() === '') {
+                mostrarError('Debes indicar un nome para a conta');
+                return;
+            }
+            
             if (nombre) {
-                const nuevoId = Math.max(...state.cuentas.map(c => c.id), 0) + 1;
                 state.cuentas.push({
                     id: nuevoId,
                     nombre,
@@ -1339,12 +1407,13 @@
                 document.getElementById('cuenta-nombre').value = '';
                 document.getElementById('cuenta-saldo').value = '';
                 
-                recalcularSaldosCuentas();
                 guardarEstado();
                 render();
+                mostrarExito('Conta engadida correctamente');
             }
         }
-function editarCuenta(id) {
+        
+        function editarCuenta(id) {
             state.editando = { tipo: 'cuenta', id: id };
             render();
         }
