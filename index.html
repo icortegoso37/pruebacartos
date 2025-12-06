@@ -2,7 +2,8 @@
 <html lang="gl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Cartiños">
     <meta name="theme-color" content="#0f0f23">
@@ -150,17 +151,7 @@
             border-color: #8338EC;
             box-shadow: 0 0 15px rgba(131, 56, 236, 0.3);
         }
-        /* Fix para dropdowns en modo oscuro */
-        select.input-neon option {
-            background-color: #1a0a2e;
-            color: #ffffff;
-        }
-        
-        select.input-neon optgroup {
-            background-color: #0f0f23;
-            color: #8338EC;
-            font-weight: bold;
-        }
+
         .stat-card {
             background: linear-gradient(135deg, rgba(131, 56, 236, 0.2), rgba(255, 0, 110, 0.1));
             backdrop-filter: blur(10px);
@@ -253,16 +244,7 @@
             justify-content: center;
             padding: 20px;
         }
-        /* Transiciones suaves globales */
-        * {
-            transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                        color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                        border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .btn-neon, .nav-item, .card-neon {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+
         .modal-content {
             background: linear-gradient(135deg, rgba(15, 15, 35, 0.95) 0%, rgba(26, 10, 46, 0.95) 100%);
             border: 2px solid rgba(131, 56, 236, 0.5);
@@ -1979,7 +1961,6 @@ function editarCuenta(id) {
                                 ${state.cuentas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
                             </select>
                             <button 
-                                id="btn-agregar-gasto"
                                 onclick="agregarGasto()"
                                 class="btn-neon bg-gradient-to-r from-pink-600 to-red-600 px-6 py-3 rounded-xl font-bold"
                             >
@@ -3358,16 +3339,7 @@ function editarCuenta(id) {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-            // Validación dinámica de botones
-            const gastoTexto = document.getElementById('gasto-texto');
-            const btnGasto = document.getElementById('btn-agregar-gasto');
-            if (gastoTexto && btnGasto) {
-                gastoTexto.addEventListener('input', function() {
-                    btnGasto.disabled = !this.value.trim();
-                    btnGasto.style.opacity = this.value.trim() ? '1' : '0.5';
-                });
-            }
-            
+
             // Crear gráficos si estamos en la vista de estadísticas
             if (state.vista === 'estadisticas') {
                 setTimeout(() => {
