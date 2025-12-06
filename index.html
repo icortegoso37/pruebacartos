@@ -3564,10 +3564,6 @@ function editarCuenta(id) {
             }
         }
 
-        // ============================================
-        // ============================================
-        // PULL TO REFRESH SIMPLIFICADO
-        // ============================================
         let startY = 0;
         let pulling = false;
         let indicator = document.createElement('div');
@@ -3645,7 +3641,6 @@ function editarCuenta(id) {
             pulling = false;
         }, { passive: true });
 
-        // Renderizar la aplicación inicialmente
         render();
     </script>
 </body>
