@@ -2127,8 +2127,8 @@
                                                         ${state.cuentas.map(c => `<option value="${c.id}" ${ingreso.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
                                                     </select>
                                                     <div class="flex gap-1">
-                                                        <button onclick="guardarEdicionIngreso(${ingreso.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
-                                                        <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
+                                                        <button onclick="guardarEdicionIngreso(${ingreso.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1" aria-label="Gardar cambios do ingreso">💾</button>
+                                                        <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1" aria-label="Cancelar edición">❌</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2188,8 +2188,8 @@
                                                         ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
                                                     </select>
                                                     <div class="flex gap-1">
-                                                        <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
-                                                        <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
+                                                        <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1" aria-label="Gardar cambios do gasto">💾</button>
+                                                        <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1" aria-label="Cancelar edición">❌</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2354,17 +2354,19 @@
                                             />
                                             <div class="flex gap-2">
                                                 <button 
-                                                    onclick="guardarEdicionCuenta(${cuenta.id})" 
-                                                    class="btn-neon bg-green-600 px-4 py-2 rounded text-sm flex-1"
-                                                >
-                                                    💾 Gardar
-                                                </button>
-                                                <button 
-                                                    onclick="cancelarEdicion()" 
-                                                    class="btn-neon bg-gray-600 px-4 py-2 rounded text-sm flex-1"
-                                                >
-                                                    ❌ Cancelar
-                                                </button>
+                                                onclick="guardarEdicionCuenta(${cuenta.id})" 
+                                                class="btn-neon bg-green-600 px-4 py-2 rounded text-sm flex-1"
+                                                aria-label="Gardar cambios da conta"
+                                            >
+                                                💾 Gardar
+                                            </button>
+                                            <button 
+                                                onclick="cancelarEdicion()" 
+                                                class="btn-neon bg-gray-600 px-4 py-2 rounded text-sm flex-1"
+                                                aria-label="Cancelar edición"
+                                            >
+                                                ❌ Cancelar
+                                            </button>
                                             </div>
                                         </div>
                                     `;
@@ -2608,7 +2610,7 @@
                             </div>
                         </div>
 
-                        <!-- Todos los Gastos del Período -->
+                        <!-- Tódolos Gastos do Período -->
                         <div class="card-neon rounded-2xl p-6">
                             <h3 class="text-xl font-bold text-white mb-4">📊 Todos os Gastos do Período</h3>
                             ${state.gastos.length > 0 ? `
@@ -2631,9 +2633,8 @@
                                                             ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
                                                         </select>
                                                         <div class="flex gap-1">
-                                                            <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
-                                                            <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
-                                                        </div>
+                                                            <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1" aria-label="Gardar cambios do gasto">💾</button>
+                                                            <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1" aria-label="Cancelar edición">❌</button>
                                                     </div>
                                                 </div>
                                             `;
@@ -2926,8 +2927,8 @@
                                                                 ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
                                                             </select>
                                                             <div class="flex gap-1">
-                                                                <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
-                                                                <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
+                                                                <button onclick="guardarEdicionGasto(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1" aria-label="Gardar cambios do gasto">💾</button>
+                                                                <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1" aria-label="Cancelar edición">❌</button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2995,8 +2996,8 @@
                                                                 ${state.cuentas.map(c => `<option value="${c.id}" ${ingreso.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
                                                             </select>
                                                             <div class="flex gap-1">
-                                                                <button onclick="guardarEdicionIngreso(${ingreso.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
-                                                                <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
+                                                                <button onclick="guardarEdicionIngreso(${ingreso.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1" aria-label="Gardar cambios do ingreso">💾</button>
+                                                                <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1" aria-label="Cancelar edición">❌</button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3158,8 +3159,8 @@
                                                             ${state.cuentas.map(c => `<option value="${c.id}" ${gasto.cuentaId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
                                                         </select>
                                                         <div class="flex gap-1">
-                                                            <button onclick="guardarEdicionGastoRecurrente(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1">💾</button>
-                                                            <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1">❌</button>
+                                                            <button onclick="guardarEdicionGastoRecurrente(${gasto.id})" class="btn-neon bg-green-600 px-3 py-1 rounded text-sm flex-1" aria-label="Gardar cambios do gasto recorrente">💾</button>
+                                                        <button onclick="cancelarEdicion()" class="btn-neon bg-gray-600 px-3 py-1 rounded text-sm flex-1" aria-label="Cancelar edición">❌</button>
                                                         </div>
                                                     </div>
                                                 </div>
