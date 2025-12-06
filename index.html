@@ -284,12 +284,23 @@
         .icon-settings { stroke: url(#gradient-cyan); }
         @keyframes slideIn {
             from {
-                transform: translateX(400px);
+                transform: translate(-50%, -100px);
                 opacity: 0;
             }
             to {
-                transform: translateX(0);
+                transform: translate(-50%, 0);
                 opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+            to {
+                transform: translate(-50%, -100px);
+                opacity: 0;
             }
         }
 
@@ -347,8 +358,7 @@
         <div class="bottom-nav">
             <div class="flex items-center justify-around">
                 <!-- Cartiños -->
-                <div class="nav-item active" onclick="cambiarVista('principal')" data-view="principal">
-                    <div class="nav-icon">
+                <div class="nav-item active" onclick="cambiarVista('principal')" data-view="principal" role="button" aria-label="Ir a páxina principal">                    <div class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-home">
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -358,7 +368,7 @@
                 </div>
                 
                 <!-- Diñeiros -->
-                <div class="nav-item" onclick="cambiarVista('dinheiros')" data-view="dinheiros">
+                <div class="nav-item" onclick="cambiarVista('dinheiros')" data-view="dinheiros" role="button" aria-label="Ir a Diñeiros">
                     <div class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-money">
                             <rect x="2" y="4" width="20" height="16" rx="2"></rect>
@@ -373,8 +383,7 @@
                 </div>
                 
                 <!-- Stats -->
-                <div class="nav-item" onclick="cambiarVista('estadisticas')" data-view="estadisticas">
-                    <div class="nav-icon">
+                <div class="nav-item" onclick="cambiarVista('estadisticas')" data-view="estadisticas" role="button" aria-label="Ir a Estatísticas">                    <div class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-stats">
                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                             <line x1="2" y1="17" x2="22" y2="7"></line>
@@ -384,7 +393,7 @@
                 </div>
                 
                 <!-- Obxetivos -->
-                <div class="nav-item" onclick="cambiarVista('objetivos')" data-view="objetivos">
+                <div class="nav-item" onclick="cambiarVista('objetivos')" data-view="objetivos" role="button" aria-label="Ir a Obxectivos">
                     <div class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-target">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -396,7 +405,7 @@
                 </div>
                 
                 <!-- Mes -->
-                <div class="nav-item" onclick="cambiarVista('calendario')" data-view="calendario">
+                <div class="nav-item" onclick="cambiarVista('calendario')" data-view="calendario" role="button" aria-label="Ir a Calendario">
                     <div class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-calendar">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -409,7 +418,7 @@
                 </div>
                 
                 <!-- Axustes -->
-                <div class="nav-item" onclick="cambiarVista('configuracion')" data-view="configuracion">
+                <div class="nav-item" onclick="cambiarVista('configuracion')" data-view="configuracion" role="button" aria-label="Ir a Configuración">
                     <div class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-settings">
                             <circle cx="12" cy="12" r="3"></circle>
@@ -598,8 +607,9 @@
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed;
-                top: 20px;
-                right: 20px;
+                top: 80px;
+                left: 50%;
+                transform: translateX(-50%);
                 background: linear-gradient(135deg, #FF006E, #DC143C);
                 color: white;
                 padding: 16px 24px;
@@ -621,8 +631,9 @@
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed;
-                top: 20px;
-                right: 20px;
+                top: 80px;
+                left: 50%;
+                transform: translateX(-50%);
                 background: linear-gradient(135deg, #06FFA5, #00D4AA);
                 color: white;
                 padding: 16px 24px;
@@ -664,21 +675,39 @@
             const cuenta = state.cuentas.find(c => c.id === cuentaId);
             if (!cuenta) return 0;
             
-            let saldo = parseFloat(cuenta.saldoInicial || 0);
+            // Recopilar todas as transaccións
+            const transacciones = [];
             
             state.ingresos.forEach(i => {
-                if (i.cuentaId === cuentaId) saldo += parseFloat(i.monto);
+                if (i.cuentaId === cuentaId) {
+                    transacciones.push({ fecha: new Date(i.fecha), monto: parseFloat(i.monto), tipo: 'ingreso' });
+                }
             });
             
             state.gastos.forEach(g => {
-                if (g.cuentaId === cuentaId) saldo -= parseFloat(g.monto);
+                if (g.cuentaId === cuentaId) {
+                    transacciones.push({ fecha: new Date(g.fecha), monto: -parseFloat(g.monto), tipo: 'gasto' });
+                }
             });
             
             state.ajustes.forEach(a => {
                 if (a.cuentaId === cuentaId) {
                     const monto = parseFloat(a.monto);
-                    saldo += (a.tipo === 'positivo' ? monto : -monto);
+                    transacciones.push({ 
+                        fecha: new Date(a.fecha), 
+                        monto: a.tipo === 'positivo' ? monto : -monto, 
+                        tipo: 'ajuste' 
+                    });
                 }
+            });
+            
+            // Ordenar cronoloxicamente
+            transacciones.sort((a, b) => a.fecha - b.fecha);
+            
+            // Calcular saldo
+            let saldo = parseFloat(cuenta.saldoInicial || 0);
+            transacciones.forEach(t => {
+                saldo += t.monto;
             });
             
             return saldo;
@@ -3071,7 +3100,6 @@
                                     class="input-neon w-full px-4 py-3 rounded-xl text-white"
                                     value="${state.diaCobro}"
                                     oninput="state.diaCobro = this.value; guardarEstadoDebounce();"
-                                    onblur="guardarEstado(); render();"
                                     placeholder="Ex: 1"
                                 />
                             </div>
@@ -3203,7 +3231,6 @@
                                         class="input-neon w-full px-4 py-3 rounded-xl text-white"
                                         value="${state.alertasConfig.diasParaCobro}"
                                         oninput="state.alertasConfig.diasParaCobro = parseInt(this.value); guardarEstadoDebounce();"
-                                        onblur="guardarEstado(); verificarAlertas(); render();"
                                     />
                                 </div>
                                 
@@ -3216,7 +3243,6 @@
                                         class="input-neon w-full px-4 py-3 rounded-xl text-white"
                                         value="${state.alertasConfig.porcentajeGastoMitadMes}"
                                         oninput="state.alertasConfig.porcentajeGastoMitadMes = parseInt(this.value); guardarEstadoDebounce();"
-                                        onblur="guardarEstado(); verificarAlertas(); render();"
                                     />
                                 </div>
 
