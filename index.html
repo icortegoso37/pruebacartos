@@ -3506,7 +3506,7 @@ function editarCuenta(id) {
                         </div>
                     </div>
                 `;
-            }
+           }
 
             html += `</div>`;
             app.innerHTML = html;
@@ -3516,7 +3516,7 @@ function editarCuenta(id) {
                 lucide.createIcons();
             }
 
-// Crear gráficos si estamos en la vista de estadísticas
+            // Crear gráficos si estamos en la vista de estadísticas
             if (state.vista === 'estadisticas') {
                 setTimeout(() => {
                     const datosGrafico = obtenerDatosGraficoPeriodo();
@@ -3556,7 +3556,8 @@ function editarCuenta(id) {
                                             }
                                         }
                                     }
-                                });
+                                }
+                            });
                         }
                     }
                 }, 100);
