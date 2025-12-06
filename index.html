@@ -726,15 +726,26 @@
             if (state.ultimaActualizacionRecurrentes === inicioPeriodoStr) return;
             
             state.gastosRecurrentes.forEach(gr => {
-                state.gastos.push({
-                    descripcion: `${gr.nombre} (Recorrente)`,
-                    monto: gr.monto,
-                    categoria: gr.categoria,
-                    cuentaId: gr.cuentaId || state.cuentas[0]?.id || 1,
-                    fecha: inicioPeriodo.toISOString(),
-                    id: Date.now() + Math.random(),
-                    esRecurrente: true
-                });
+                // Comprobar se xa existe este gasto recorrente neste período
+                const periodoKey = inicioPeriodoStr;
+                const idRecurrente = `${gr.id}-${periodoKey}`;
+                
+                const yaExiste = state.gastos.some(g => 
+                    g.idRecurrente === idRecurrente
+                );
+                
+                if (!yaExiste) {
+                    state.gastos.push({
+                        descripcion: `${gr.nombre} (Recorrente)`,
+                        monto: gr.monto,
+                        categoria: gr.categoria,
+                        cuentaId: gr.cuentaId || state.cuentas[0]?.id || 1,
+                        fecha: inicioPeriodo.toISOString(),
+                        id: Date.now() + Math.random(),
+                        esRecurrente: true,
+                        idRecurrente: idRecurrente
+                    });
+                }
             });
             
             state.ultimaActualizacionRecurrentes = inicioPeriodoStr;
@@ -1223,9 +1234,9 @@
                 recalcularSaldosCuentas();
                 guardarEstado();
                 render();
+                mostrarExito('Gasto eliminado correctamente');
             }
         }
-
         function editarGasto(id) {
             const gasto = state.gastos.find(g => g.id === id);
             if (gasto) {
@@ -1251,6 +1262,7 @@
                 recalcularSaldosCuentas();
                 guardarEstado();
                 render();
+                mostrarExito('Gasto actualizado correctamente');
             }
         }
 
@@ -1299,6 +1311,7 @@
                 recalcularSaldosCuentas();
                 guardarEstado();
                 render();
+                mostrarExito('Ingreso eliminado correctamente');
             }
         }
 
@@ -1326,6 +1339,7 @@
                 recalcularSaldosCuentas();
                 guardarEstado();
                 render();
+                mostrarExito('Ingreso actualizado correctamente');
             }
         }
 
@@ -1352,6 +1366,7 @@
                 state.editando = null;
                 guardarEstado();
                 render();
+                mostrarExito('Gasto recorrente actualizado correctamente');
             }
         }
 
@@ -1373,6 +1388,15 @@
             
             if (!fechaLimite) {
                 mostrarError('Debes indicar unha data límite');
+                return;
+            }
+            
+            const fechaLimiteObj = new Date(fechaLimite);
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            if (fechaLimiteObj < hoy) {
+                mostrarError('A data límite non pode ser no pasado');
                 return;
             }
             
@@ -1404,6 +1428,7 @@
                 state.objetivosAhorro = state.objetivosAhorro.filter(o => o.id !== id);
                 guardarEstado();
                 render();
+                mostrarExito('Obxectivo eliminado correctamente');
             }
         }
 
@@ -1485,7 +1510,7 @@
             render();
         }
 
-    function guardarEdicionCuenta(id) {
+        function guardarEdicionCuenta(id) {
             const cuenta = state.cuentas.find(c => c.id === id);
             if (cuenta) {
                 const nuevoNombre = document.getElementById(`edit-cuenta-nombre-${id}`).value;
@@ -1516,14 +1541,17 @@
                     recalcularSaldosCuentas();
                     guardarEstado();
                     render();
+                    mostrarExito('Conta actualizada correctamente');
                 }
             }
         }
         function eliminarCuenta(id) {
-            if (state.cuentas.length > 1) {
+            const cuenta = state.cuentas.find(c => c.id === id);
+            if (state.cuentas.length > 1 && cuenta && confirm(`Seguro que queres eliminar a conta "${cuenta.nombre}"?`)) {
                 state.cuentas = state.cuentas.filter(c => c.id !== id);
                 guardarEstado();
                 render();
+                mostrarExito('Conta eliminada correctamente');
             }
         }
 
