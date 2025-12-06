@@ -3515,7 +3515,7 @@ function editarCuenta(id) {
                 lucide.createIcons();
             }
 
-           // Crear gráficos si estamos en la vista de estadísticas (con lazy load)
+// Crear gráficos si estamos en la vista de estadísticas (con lazy load)
             if (state.vista === 'estadisticas') {
                 setTimeout(() => {
                     const datosGrafico = obtenerDatosGraficoPeriodo();
@@ -3540,46 +3540,43 @@ function editarCuenta(id) {
         // Función separada para crear el gráfico
         function crearGraficoPastel(ctx, datosGrafico) {
             new Chart(ctx, {
-                                type: 'pie',
-                                data: {
-                                    labels: datosGrafico.map(d => d.nombre),
-                                    datasets: [{
-                                        data: datosGrafico.map(d => d.valor),
-                                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
-                                        borderWidth: 2,
-                                        borderColor: '#0f0f23'
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: true,
-                                    plugins: {
-                                        legend: {
-                                            position: 'bottom',
-                                            labels: {
-                                                color: '#ffffff',
-                                                padding: 15,
-                                                font: {
-                                                    size: 12
-                                                }
-                                            }
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: function(context) {
-                                                    return context.label + ': ' + context.parsed.toFixed(2) + '€';
-                                                }
-                                            }
-                                        }
-                                    }
+                type: 'pie',
+                data: {
+                    labels: datosGrafico.map(d => d.nombre),
+                    datasets: [{
+                        data: datosGrafico.map(d => d.valor),
+                        backgroundColor: datosGrafico.map(d => obtenerColorCategoria(d.nombre)),
+                        borderWidth: 2,
+                        borderColor: '#0f0f23'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ffffff',
+                                padding: 15,
+                                font: {
+                                    size: 12
                                 }
-                            });
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(2) + '€';
+                                }
+                            }
                         }
                     }
-                } 100);
-            }
+                }
+            });
         }
-// ============================================
+
+        // ============================================
     // ============================================
         // PULL TO REFRESH SIMPLIFICADO
         // ============================================
